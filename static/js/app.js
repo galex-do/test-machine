@@ -365,13 +365,45 @@ function loadTestSuiteDetails(testSuiteId) {
 }
 
 function renderTestSuiteDetails(testSuite, testCases, testRuns) {
-    document.getElementById('test-suite-name').textContent = testSuite.name;
-    document.getElementById('test-suite-description').textContent = testSuite.description || 'No description';
-    document.getElementById('project-name').textContent = testSuite.project.name;
+    console.log('Rendering test suite details:', testSuite, testCases, testRuns);
     
-    // Render test cases
-    const casesContainer = document.getElementById('test-cases-container');
-    if (!testCases || testCases.length === 0) {
+    // Update basic information with null checks
+    const testSuiteNameEl = document.getElementById('test-suite-name');
+    const testSuiteDescEl = document.getElementById('test-suite-description');
+    const projectNameEl = document.getElementById('project-name');
+    
+    if (testSuiteNameEl) testSuiteNameEl.textContent = testSuite.name;
+    if (testSuiteDescEl) testSuiteDescEl.textContent = testSuite.description || 'No description';
+    if (projectNameEl) projectNameEl.textContent = testSuite.project.name;
+    
+    // Render test cases with fallback creation
+    let casesContainer = document.getElementById('test-cases-container');
+    if (!casesContainer) {
+        console.log('test-cases-container not found, creating fallback');
+        const mainContent = document.querySelector('main');
+        if (mainContent) {
+            // Create section with proper Bootstrap styling
+            const section = document.createElement('div');
+            section.className = 'mb-4';
+            section.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>Test Cases</h3>
+                    <button class="btn btn-primary" onclick="showCreateTestCaseModal()">
+                        <i class="fas fa-plus"></i> Create Test Case
+                    </button>
+                </div>
+                <div id="test-cases-container"></div>
+            `;
+            mainContent.appendChild(section);
+            casesContainer = document.getElementById('test-cases-container');
+            console.log('Created test-cases-container element');
+        }
+    }
+    
+    if (casesContainer && testCases && testCases.length > 0) {
+        console.log('Calling renderTestCasesTable with container:', casesContainer);
+        renderTestCasesTable(testCases, casesContainer);
+    } else if (casesContainer) {
         casesContainer.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-clipboard-list"></i>
@@ -382,13 +414,35 @@ function renderTestSuiteDetails(testSuite, testCases, testRuns) {
                 </button>
             </div>
         `;
-    } else {
-        renderTestCasesTable(testCases, casesContainer);
     }
     
-    // Render test runs
-    const runsContainer = document.getElementById('test-runs-container');
-    if (!testRuns || testRuns.length === 0) {
+    // Render test runs with fallback creation
+    let runsContainer = document.getElementById('test-runs-container');
+    if (!runsContainer) {
+        console.log('test-runs-container not found, creating fallback');
+        const mainContent = document.querySelector('main');
+        if (mainContent) {
+            // Create section with proper Bootstrap styling
+            const section = document.createElement('div');
+            section.className = 'mb-4';
+            section.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>Test Runs</h3>
+                    <button class="btn btn-success" onclick="showCreateTestRunModal()">
+                        <i class="fas fa-play"></i> Start Test Run
+                    </button>
+                </div>
+                <div id="test-runs-container"></div>
+            `;
+            mainContent.appendChild(section);
+            runsContainer = document.getElementById('test-runs-container');
+            console.log('Created test-runs-container element');
+        }
+    }
+    
+    if (runsContainer && testRuns && testRuns.length > 0) {
+        renderTestRunsTable(testRuns, runsContainer);
+    } else if (runsContainer) {
         runsContainer.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-play-circle"></i>
@@ -399,8 +453,6 @@ function renderTestSuiteDetails(testSuite, testCases, testRuns) {
                 </button>
             </div>
         `;
-    } else {
-        renderTestRunsTable(testRuns, runsContainer);
     }
 }
 
