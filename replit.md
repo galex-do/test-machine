@@ -10,6 +10,11 @@ This is a Test Management Platform built as a web application for organizing and
 - Updated Docker containerization with PostgreSQL support and orchestration
 - Modified Docker Compose to include PostgreSQL service with persistent volumes
 - Added database initialization scripts and sample data seeding
+- **COMPLETE RESTRUCTURE**: Refactored from single file to standard Go project structure
+- Implemented proper Go module structure with github.com/galex-do/test-machine
+- Created layered architecture: cmd/, internal/ packages following Go conventions
+- Added repository pattern with separate packages: models, services, handlers, database
+- Separated concerns with proper service layer and database abstraction
 - Successfully deployed on port 5000 with persistent PostgreSQL backend
 - All CRUD operations now use authentic PostgreSQL data with ACID compliance
 
@@ -46,7 +51,22 @@ The frontend follows a traditional server-side rendered architecture using HTML 
 
 ## Backend Architecture
 
-Based on the template structure and JavaScript, the backend appears to be built with Go, using Go's html/template package for server-side rendering. The architecture follows a traditional MVC pattern.
+The backend is built with Go following standard Go project conventions and clean architecture principles. The system uses PostgreSQL for persistent data storage with a layered architecture pattern.
+
+**Project Structure:**
+- `cmd/server/main.go` - Application entry point and dependency injection
+- `internal/config/` - Configuration management with environment variables
+- `internal/database/` - Database connection and connection pooling
+- `internal/models/` - Data models and request/response structures
+- `internal/repository/` - Data access layer with PostgreSQL integration
+- `internal/service/` - Business logic layer with validation
+- `internal/handlers/` - HTTP handlers for web and API routes
+
+**Architecture Pattern:**
+- Repository pattern for data access abstraction
+- Service layer for business logic separation
+- Dependency injection through constructor functions
+- Clean separation of concerns across layers
 
 **Routing Structure:**
 - `/` - Dashboard/home page

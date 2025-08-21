@@ -22,13 +22,13 @@ args = "Test Management PostgreSQL"
 name = "Test Management PostgreSQL"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "go run simple_main.go"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "go run cmd/server/main.go"
+waitForPort = 5000
 
 [[ports]]
 localPort = 5000
