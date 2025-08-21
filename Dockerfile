@@ -14,10 +14,11 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy source code
-COPY . .
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
 
 # Build the application (enable CGO for PostgreSQL driver)
-RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main simple_main.go
+RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/server
 
 # Use minimal alpine image for final stage
 FROM alpine:latest

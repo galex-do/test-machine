@@ -15,6 +15,8 @@ This is a Test Management Platform built as a web application for organizing and
 - Created layered architecture: cmd/, internal/ packages following Go conventions
 - Added repository pattern with separate packages: models, services, handlers, database
 - Separated concerns with proper service layer and database abstraction
+- Updated Dockerfile to build from new cmd/server/main.go entry point
+- Cleaned up legacy files (simple_main.go, main.go, old packages)
 - Successfully deployed on port 5000 with persistent PostgreSQL backend
 - All CRUD operations now use authentic PostgreSQL data with ACID compliance
 
