@@ -259,13 +259,36 @@ function renderProjectDetails(project, testSuites) {
     if (projectNameEl) projectNameEl.textContent = project.name;
     if (projectDescEl) projectDescEl.textContent = project.description || 'No description';
     
-    const container = document.getElementById('test-suites-container');
+    // Try multiple ways to find the container
+    let container = document.getElementById('test-suites-container');
+    
     if (!container) {
-        console.error('test-suites-container not found, available elements:', 
-            Array.from(document.querySelectorAll('[id]')).map(el => el.id));
+        // Wait and try again
+        setTimeout(() => {
+            container = document.getElementById('test-suites-container');
+            if (!container) {
+                console.error('test-suites-container still not found after delay');
+                // Try creating the element if it doesn't exist
+                const projectDetails = document.getElementById('project-details');
+                if (projectDetails) {
+                    container = document.createElement('div');
+                    container.id = 'test-suites-container';
+                    container.innerHTML = '<h3><i class="fas fa-tasks"></i> Test Suites</h3>';
+                    projectDetails.appendChild(container);
+                    console.log('Created test-suites-container element');
+                }
+            }
+            if (container) {
+                renderTestSuitesInContainer(container, testSuites);
+            }
+        }, 200);
         return;
     }
     
+    renderTestSuitesInContainer(container, testSuites);
+}
+
+function renderTestSuitesInContainer(container, testSuites) {
     if (!testSuites || testSuites.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
