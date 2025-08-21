@@ -5,9 +5,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: ${DATABASE_USER}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-      POSTGRES_DB: ${DATABASE_DB}
+      POSTGRES_USER: ${DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      POSTGRES_DB: ${DATABASE_DB:-test}
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
       - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
@@ -19,7 +19,7 @@ services:
     ports:
       - "5000:5000"
     environment:
-      DATABASE_URL: postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:5432/${DATABASE_DB}?sslmode=disable
+      DATABASE_URL: postgres://${DATABASE_USER:-postgres}:${DATABASE_PASSWORD:-postgres}@${DATABASE_HOST:-postgres}:5432/${DATABASE_DB:-test}?sslmode=disable
     depends_on:
       - postgres
     restart: unless-stopped
