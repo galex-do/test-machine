@@ -190,7 +190,7 @@ function renderProjects(projects) {
 
     let html = '<div class="row">';
     projects.forEach(project => {
-        const testSuitesCount = project.test_suites ? project.test_suites.length : 0;
+        const testSuitesCount = project.test_suites_count || 0;
         html += `
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100">
@@ -305,7 +305,7 @@ function renderTestSuitesInContainer(container, testSuites) {
 
     let html = '<div class="row">';
     testSuites.forEach(testSuite => {
-        const testCasesCount = testSuite.test_cases ? testSuite.test_cases.length : 0;
+        const testCasesCount = testSuite.test_cases_count || 0;
         html += `
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100">
