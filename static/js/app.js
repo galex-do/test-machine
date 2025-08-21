@@ -337,6 +337,13 @@ function renderTestSuitesInContainer(container, testSuites) {
 
 function loadTestSuiteDetails(testSuiteId) {
     currentTestSuite = testSuiteId;
+    
+    // Ensure DOM is ready before proceeding
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => loadTestSuiteDetails(testSuiteId));
+        return;
+    }
+    
     showLoading('test-suite-details');
     
     Promise.all([
@@ -345,7 +352,15 @@ function loadTestSuiteDetails(testSuiteId) {
         API.getTestRuns(testSuiteId)
     ]).then(([testSuite, testCases, testRuns]) => {
         hideLoading();
-        renderTestSuiteDetails(testSuite, testCases, testRuns);
+        
+        // Use setTimeout to ensure DOM elements are available
+        setTimeout(() => {
+            renderTestSuiteDetails(testSuite, testCases, testRuns);
+        }, 100);
+    }).catch(error => {
+        hideLoading();
+        console.error('Error loading test suite details:', error);
+        showAlert('Error loading test suite details', 'danger');
     });
 }
 
@@ -390,6 +405,11 @@ function renderTestSuiteDetails(testSuite, testCases, testRuns) {
 }
 
 function renderTestCasesTable(testCases, container) {
+    if (!container) {
+        console.error('Container not provided for test cases table');
+        return;
+    }
+    
     let html = `
         <div class="table-responsive">
             <table class="table table-hover">
