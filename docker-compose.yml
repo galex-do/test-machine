@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  test-management:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+    restart: unless-stopped
+    volumes:
+      # Optional: Mount for persistent data if needed
+      - ./data:/app/data
+    networks:
+      - test-management-network
+
+networks:
+  test-management-network:
+    driver: bridge
+
+volumes:
+  data:

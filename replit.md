@@ -1,6 +1,14 @@
 # Overview
 
-This is a Test Management Platform built as a web application for organizing and tracking software testing activities. The platform provides functionality for managing test projects, test suites, test cases, and test runs with a comprehensive dashboard and reporting system. It appears to be designed for QA teams and software testers to organize their testing workflows and track test execution results.
+This is a Test Management Platform built as a web application for organizing and tracking software testing activities. The platform provides functionality for managing test projects, test suites, test cases, and test runs with a comprehensive dashboard and reporting system. It is designed for QA teams and software testers to organize their testing workflows and track test execution results.
+
+## Recent Changes (August 2025)
+- Built working Go implementation using standard library (simple_main.go)
+- Added complete Docker containerization support for local deployment
+- Created multi-stage Dockerfile with optimized Alpine Linux build
+- Added Docker Compose configuration for easy local development
+- Implemented in-memory data storage with sample test data
+- Successfully deployed on port 5000 with web interface
 
 # User Preferences
 
@@ -98,8 +106,38 @@ The current templates don't show explicit authentication mechanisms, suggesting 
 - Custom JavaScript file (app.js) for client-side functionality
 - No build tools or transpilation appears to be configured
 
-**Deployment Considerations:**
-- Static file serving for CSS, JavaScript, and other assets
-- Template compilation and caching
-- Database connection management
-- Environment-based configuration
+## Containerization and Deployment
+
+**Docker Support:**
+- Multi-stage Dockerfile with Go 1.21 Alpine build environment
+- Optimized final image using minimal Alpine Linux base
+- Proper static asset copying (templates and static files)
+- Exposed on port 5000 for web access
+
+**Local Deployment Options:**
+1. **Docker Compose** (Recommended):
+   ```bash
+   docker-compose up --build
+   ```
+   - Includes networking configuration
+   - Volume mounting for persistent data
+   - Automatic restart policies
+
+2. **Direct Docker Build**:
+   ```bash
+   docker build -t test-management .
+   docker run -p 5000:5000 test-management
+   ```
+
+**Configuration Files:**
+- `Dockerfile` - Multi-stage build with Go compilation and Alpine runtime
+- `docker-compose.yml` - Complete orchestration configuration
+- `.dockerignore` - Optimized build context exclusions
+- `build.sh` - Local build script for development
+- `README.md` - Complete deployment instructions
+
+**Current Implementation:**
+- Uses `simple_main.go` with Go standard library only
+- In-memory data storage with pre-initialized sample data
+- No external database dependencies for containerized deployment
+- All static assets and templates included in container image
