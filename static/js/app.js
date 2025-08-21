@@ -315,7 +315,7 @@ function renderTestSuitesInContainer(container, testSuites) {
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">${testCasesCount} test case(s)</small>
                             <div class="action-buttons">
-                                <a href="/test-suite/${testSuite.id}" class="btn btn-outline-primary btn-sm">
+                                <a href="/project/${currentProject}/test-suite/${testSuite.id}" class="btn btn-outline-primary btn-sm">
                                     <i class="fas fa-eye"></i> View
                                 </a>
                                 <button class="btn btn-outline-success btn-sm" onclick="createTestRun(${testSuite.id})">
@@ -422,7 +422,7 @@ function renderTestCasesTable(testCases, container) {
                 <td>${stepsCount}</td>
                 <td>
                     <div class="action-buttons">
-                        <a href="/test-case/${testCase.id}" class="btn btn-outline-primary btn-sm">
+                        <a href="/project/${currentProject}/test-suite/${currentTestSuite}/test-case/${testCase.id}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-eye"></i> View
                         </a>
                         <button class="btn btn-outline-secondary btn-sm" onclick="editTestCase(${testCase.id})">

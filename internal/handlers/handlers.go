@@ -40,9 +40,6 @@ func (h *Handler) SetupRoutes() *http.ServeMux {
         // Frontend routes
         mux.HandleFunc("/", h.indexHandler)
         mux.HandleFunc("/project/", h.projectHandler)
-        mux.HandleFunc("/test-suite/", h.testSuiteHandler)
-        mux.HandleFunc("/test-case/", h.testCaseHandler)
-        mux.HandleFunc("/test-run/", h.testRunHandler)
         mux.HandleFunc("/reports", h.reportsHandler)
 
         // API routes
@@ -97,13 +94,49 @@ func (h *Handler) indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) projectHandler(w http.ResponseWriter, r *http.Request) {
-        idStr := strings.TrimPrefix(r.URL.Path, "/project/")
-        id, err := strconv.Atoi(idStr)
+        path := strings.TrimPrefix(r.URL.Path, "/project/")
+        parts := strings.Split(path, "/")
+        
+        if len(parts) == 0 || parts[0] == "" {
+                http.Error(w, "Invalid project URL", http.StatusBadRequest)
+                return
+        }
+        
+        projectID, err := strconv.Atoi(parts[0])
         if err != nil {
                 http.Error(w, "Invalid project ID", http.StatusBadRequest)
                 return
         }
+        
+        // Handle different hierarchical routes
+        if len(parts) == 1 {
+                // /project/{id} - Project details
+                h.renderProjectDetails(w, projectID)
+        } else if len(parts) >= 3 && parts[1] == "test-suite" {
+                // /project/{pid}/test-suite/{sid} - Test suite details
+                testSuiteID, err := strconv.Atoi(parts[2])
+                if err != nil {
+                        http.Error(w, "Invalid test suite ID", http.StatusBadRequest)
+                        return
+                }
+                
+                if len(parts) >= 5 && parts[3] == "test-case" {
+                        // /project/{pid}/test-suite/{sid}/test-case/{cid} - Test case details
+                        testCaseID, err := strconv.Atoi(parts[4])
+                        if err != nil {
+                                http.Error(w, "Invalid test case ID", http.StatusBadRequest)
+                                return
+                        }
+                        h.renderTestCaseDetails(w, projectID, testSuiteID, testCaseID)
+                } else {
+                        h.renderTestSuiteDetails(w, projectID, testSuiteID)
+                }
+        } else {
+                http.Error(w, "Invalid URL path", http.StatusBadRequest)
+        }
+}
 
+func (h *Handler) renderProjectDetails(w http.ResponseWriter, projectID int) {
         tmpl := h.parseTemplates("project.html")
         if tmpl == nil {
                 http.Error(w, "Template error", http.StatusInternalServerError)
@@ -112,19 +145,12 @@ func (h *Handler) projectHandler(w http.ResponseWriter, r *http.Request) {
 
         data := map[string]interface{}{
                 "title":     "Project Details",
-                "projectID": id,
+                "projectID": projectID,
         }
         tmpl.Execute(w, data)
 }
 
-func (h *Handler) testSuiteHandler(w http.ResponseWriter, r *http.Request) {
-        idStr := strings.TrimPrefix(r.URL.Path, "/test-suite/")
-        id, err := strconv.Atoi(idStr)
-        if err != nil {
-                http.Error(w, "Invalid test suite ID", http.StatusBadRequest)
-                return
-        }
-
+func (h *Handler) renderTestSuiteDetails(w http.ResponseWriter, projectID, testSuiteID int) {
         tmpl := h.parseTemplates("test-suite.html")
         if tmpl == nil {
                 http.Error(w, "Template error", http.StatusInternalServerError)
@@ -133,19 +159,13 @@ func (h *Handler) testSuiteHandler(w http.ResponseWriter, r *http.Request) {
 
         data := map[string]interface{}{
                 "title":       "Test Suite Details",
-                "testSuiteID": id,
+                "projectID":   projectID,
+                "testSuiteID": testSuiteID,
         }
         tmpl.Execute(w, data)
 }
 
-func (h *Handler) testCaseHandler(w http.ResponseWriter, r *http.Request) {
-        idStr := strings.TrimPrefix(r.URL.Path, "/test-case/")
-        id, err := strconv.Atoi(idStr)
-        if err != nil {
-                http.Error(w, "Invalid test case ID", http.StatusBadRequest)
-                return
-        }
-
+func (h *Handler) renderTestCaseDetails(w http.ResponseWriter, projectID, testSuiteID, testCaseID int) {
         tmpl := h.parseTemplates("test-case.html")
         if tmpl == nil {
                 http.Error(w, "Template error", http.StatusInternalServerError)
@@ -153,32 +173,15 @@ func (h *Handler) testCaseHandler(w http.ResponseWriter, r *http.Request) {
         }
 
         data := map[string]interface{}{
-                "title":      "Test Case Details",
-                "testCaseID": id,
+                "title":       "Test Case Details",
+                "projectID":   projectID,
+                "testSuiteID": testSuiteID,
+                "testCaseID":  testCaseID,
         }
         tmpl.Execute(w, data)
 }
 
-func (h *Handler) testRunHandler(w http.ResponseWriter, r *http.Request) {
-        idStr := strings.TrimPrefix(r.URL.Path, "/test-run/")
-        id, err := strconv.Atoi(idStr)
-        if err != nil {
-                http.Error(w, "Invalid test run ID", http.StatusBadRequest)
-                return
-        }
 
-        tmpl := h.parseTemplates("test-run.html")
-        if tmpl == nil {
-                http.Error(w, "Template error", http.StatusInternalServerError)
-                return
-        }
-
-        data := map[string]interface{}{
-                "title":     "Test Run Details",
-                "testRunID": id,
-        }
-        tmpl.Execute(w, data)
-}
 
 func (h *Handler) reportsHandler(w http.ResponseWriter, r *http.Request) {
         tmpl := h.parseTemplates("reports.html")

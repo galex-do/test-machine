@@ -19,6 +19,13 @@ This is a Test Management Platform built as a web application for organizing and
 - Cleaned up legacy files (simple_main.go, main.go, old packages)
 - Successfully deployed on port 5000 with persistent PostgreSQL backend
 - All CRUD operations now use authentic PostgreSQL data with ACID compliance
+- **HIERARCHICAL URL STRUCTURE**: Implemented nested URL patterns for better organization
+- Changed from `/test-suite/{id}` to `/project/{pid}/test-suite/{sid}` 
+- Changed from `/test-case/{id}` to `/project/{pid}/test-suite/{sid}/test-case/{cid}`
+- Updated breadcrumb navigation to reflect hierarchical structure
+- Added count fields to Project and TestSuite models for accurate counters
+- Enhanced SQL queries with JOINs to calculate real test suite and test case counts
+- Fixed DOM element loading issues with fallback creation mechanisms
 
 # User Preferences
 
