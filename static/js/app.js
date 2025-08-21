@@ -170,6 +170,10 @@ function loadProjects() {
 
 function renderProjects(projects) {
     const container = document.getElementById('projects-container');
+    if (!container) {
+        console.error('projects-container not found');
+        return;
+    }
     if (!projects || projects.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
@@ -218,6 +222,13 @@ function renderProjects(projects) {
 
 function loadProjectDetails(projectId) {
     currentProject = projectId;
+    
+    // Ensure DOM is ready before proceeding
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => loadProjectDetails(projectId));
+        return;
+    }
+    
     showLoading('project-details');
     
     Promise.all([
@@ -227,7 +238,11 @@ function loadProjectDetails(projectId) {
         hideLoading();
         console.log('Loaded project:', project);
         console.log('Loaded test suites:', testSuites);
-        renderProjectDetails(project, testSuites);
+        
+        // Use setTimeout to ensure DOM elements are available
+        setTimeout(() => {
+            renderProjectDetails(project, testSuites);
+        }, 100);
     }).catch(error => {
         hideLoading();
         console.error('Error loading project details:', error);
@@ -246,7 +261,8 @@ function renderProjectDetails(project, testSuites) {
     
     const container = document.getElementById('test-suites-container');
     if (!container) {
-        console.error('test-suites-container not found');
+        console.error('test-suites-container not found, available elements:', 
+            Array.from(document.querySelectorAll('[id]')).map(el => el.id));
         return;
     }
     
