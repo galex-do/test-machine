@@ -225,15 +225,31 @@ function loadProjectDetails(projectId) {
         API.getTestSuites(projectId)
     ]).then(([project, testSuites]) => {
         hideLoading();
+        console.log('Loaded project:', project);
+        console.log('Loaded test suites:', testSuites);
         renderProjectDetails(project, testSuites);
+    }).catch(error => {
+        hideLoading();
+        console.error('Error loading project details:', error);
+        showAlert('Error loading project details', 'danger');
     });
 }
 
 function renderProjectDetails(project, testSuites) {
-    document.getElementById('project-name').textContent = project.name;
-    document.getElementById('project-description').textContent = project.description || 'No description';
+    console.log('Rendering project details:', project, testSuites);
+    
+    const projectNameEl = document.getElementById('project-name');
+    const projectDescEl = document.getElementById('project-description');
+    
+    if (projectNameEl) projectNameEl.textContent = project.name;
+    if (projectDescEl) projectDescEl.textContent = project.description || 'No description';
     
     const container = document.getElementById('test-suites-container');
+    if (!container) {
+        console.error('test-suites-container not found');
+        return;
+    }
+    
     if (!testSuites || testSuites.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
@@ -928,10 +944,20 @@ function showExecutionModal(executionId) {
 function editProject(projectId) {
     API.getProject(projectId).then(project => {
         $('#projectModal').modal('show');
-        document.getElementById('projectModalTitle').textContent = 'Edit Project';
-        document.getElementById('projectId').value = project.id;
-        document.getElementById('projectName').value = project.name;
-        document.getElementById('projectDescription').value = project.description || '';
+        
+        // Safely set element content if elements exist
+        const titleEl = document.getElementById('projectModalTitle');
+        const idEl = document.getElementById('projectId');
+        const nameEl = document.getElementById('projectName');
+        const descEl = document.getElementById('projectDescription');
+        
+        if (titleEl) titleEl.textContent = 'Edit Project';
+        if (idEl) idEl.value = project.id;
+        if (nameEl) nameEl.value = project.name;
+        if (descEl) descEl.value = project.description || '';
+    }).catch(error => {
+        console.error('Error loading project:', error);
+        showAlert('Error loading project details', 'danger');
     });
 }
 
