@@ -33,8 +33,8 @@ WORKDIR /root/
 COPY --from=builder /app/main .
 
 # Copy static files and templates
-COPY --from=builder /app/static ./static
-COPY --from=builder /app/templates ./templates
+COPY static/ ./static/
+COPY templates/ ./templates/
 
 # Expose port 5000
 EXPOSE 5000

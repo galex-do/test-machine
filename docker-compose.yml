@@ -3,17 +3,14 @@ version: '3.8'
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     environment:
-      - POSTGRES_USER=testmgmt
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=testmanagement
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_DB}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - test-management-network
+      - ./postgres_data:/var/lib/postgresql/data
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
     restart: unless-stopped
 
   # Test Management Application
@@ -22,12 +19,10 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - DATABASE_URL=postgres://testmgmt:password@postgres:5432/testmanagement?sslmode=disable
+      DATABASE_URL: postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:5432/${DATABASE_DB}?sslmode=disable
     depends_on:
       - postgres
     restart: unless-stopped
-    networks:
-      - test-management-network
     # Wait for postgres to be ready
     command: >
       sh -c "
@@ -38,10 +33,3 @@ services:
         echo 'PostgreSQL is ready!'
         ./main
       "
-
-networks:
-  test-management-network:
-    driver: bridge
-
-volumes:
-  postgres_data:
