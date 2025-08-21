@@ -1,4 +1,4 @@
-modules = ["go"]
+modules = ["go", "golang", "postgresql-16"]
 [agent]
 expertMode = true
 
@@ -16,10 +16,10 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Test Management Server"
+args = "Test Management PostgreSQL"
 
 [[workflows.workflow]]
-name = "Test Management Server"
+name = "Test Management PostgreSQL"
 author = "agent"
 
 [[workflows.workflow.tasks]]

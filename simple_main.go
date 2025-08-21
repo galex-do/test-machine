@@ -1,30 +1,36 @@
 package main
 
 import (
+        "database/sql"
         "encoding/json"
-        "fmt"
         "html/template"
         "log"
         "net/http"
+        "os"
         "path/filepath"
         "strconv"
         "strings"
+        "time"
+
+        _ "github.com/lib/pq"
 )
 
 type Project struct {
-        ID          int    `json:"id"`
-        Name        string `json:"name"`
-        Description string `json:"description"`
-        CreatedAt   string `json:"created_at"`
+        ID          int       `json:"id"`
+        Name        string    `json:"name"`
+        Description string    `json:"description"`
+        CreatedAt   time.Time `json:"created_at"`
+        UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type TestSuite struct {
-        ID          int     `json:"id"`
-        Name        string  `json:"name"`
-        Description string  `json:"description"`
-        ProjectID   int     `json:"project_id"`
-        CreatedAt   string  `json:"created_at"`
-        Project     Project `json:"project,omitempty"`
+        ID          int       `json:"id"`
+        Name        string    `json:"name"`
+        Description string    `json:"description"`
+        ProjectID   int       `json:"project_id"`
+        CreatedAt   time.Time `json:"created_at"`
+        UpdatedAt   time.Time `json:"updated_at"`
+        Project     *Project  `json:"project,omitempty"`
 }
 
 type TestCase struct {
@@ -34,21 +40,27 @@ type TestCase struct {
         Priority    string    `json:"priority"`
         Status      string    `json:"status"`
         TestSuiteID int       `json:"test_suite_id"`
-        CreatedAt   string    `json:"created_at"`
-        TestSuite   TestSuite `json:"test_suite,omitempty"`
+        CreatedAt   time.Time `json:"created_at"`
+        UpdatedAt   time.Time `json:"updated_at"`
+        TestSuite   *TestSuite `json:"test_suite,omitempty"`
 }
 
-// In-memory storage
-var projects []Project
-var testSuites []TestSuite
-var testCases []TestCase
-var nextProjectID = 1
-var nextTestSuiteID = 1
-var nextTestCaseID = 1
+var db *sql.DB
 
 func main() {
-        // Initialize sample data
-        initSampleData()
+        // Initialize database connection
+        var err error
+        db, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
+        if err != nil {
+                log.Fatal("Failed to connect to database:", err)
+        }
+        defer db.Close()
+
+        // Test database connection
+        if err := db.Ping(); err != nil {
+                log.Fatal("Failed to ping database:", err)
+        }
+        log.Println("Connected to PostgreSQL database")
 
         // Serve static files
         http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -71,78 +83,6 @@ func main() {
 
         log.Println("Server starting on port 5000...")
         log.Fatal(http.ListenAndServe(":5000", nil))
-}
-
-func initSampleData() {
-        // Add sample project
-        projects = append(projects, Project{
-                ID:          nextProjectID,
-                Name:        "Web Application Testing",
-                Description: "Testing suite for the main web application",
-                CreatedAt:   "2025-01-20T10:00:00Z",
-        })
-        nextProjectID++
-
-        projects = append(projects, Project{
-                ID:          nextProjectID,
-                Name:        "Mobile App Testing",
-                Description: "Testing suite for the mobile application",
-                CreatedAt:   "2025-01-21T09:00:00Z",
-        })
-        nextProjectID++
-
-        // Add sample test suite
-        testSuites = append(testSuites, TestSuite{
-                ID:          nextTestSuiteID,
-                Name:        "User Authentication",
-                Description: "Test cases for user login, registration, and password reset",
-                ProjectID:   1,
-                CreatedAt:   "2025-01-20T11:00:00Z",
-        })
-        nextTestSuiteID++
-
-        testSuites = append(testSuites, TestSuite{
-                ID:          nextTestSuiteID,
-                Name:        "E-commerce Checkout",
-                Description: "Test cases for shopping cart and checkout process",
-                ProjectID:   1,
-                CreatedAt:   "2025-01-20T12:00:00Z",
-        })
-        nextTestSuiteID++
-
-        // Add sample test cases
-        testCases = append(testCases, TestCase{
-                ID:          nextTestCaseID,
-                Title:       "Valid User Login",
-                Description: "Test successful login with valid credentials",
-                Priority:    "High",
-                Status:      "Active",
-                TestSuiteID: 1,
-                CreatedAt:   "2025-01-20T11:30:00Z",
-        })
-        nextTestCaseID++
-
-        testCases = append(testCases, TestCase{
-                ID:          nextTestCaseID,
-                Title:       "Invalid Password Login",
-                Description: "Test login failure with invalid password",
-                Priority:    "High",
-                Status:      "Active",
-                TestSuiteID: 1,
-                CreatedAt:   "2025-01-20T11:45:00Z",
-        })
-        nextTestCaseID++
-
-        testCases = append(testCases, TestCase{
-                ID:          nextTestCaseID,
-                Title:       "Add Item to Cart",
-                Description: "Test adding products to shopping cart",
-                Priority:    "Medium",
-                Status:      "Active",
-                TestSuiteID: 2,
-                CreatedAt:   "2025-01-20T12:30:00Z",
-        })
-        nextTestCaseID++
 }
 
 // Template helper functions
@@ -272,21 +212,28 @@ func projectsAPIHandler(w http.ResponseWriter, r *http.Request) {
         
         switch r.Method {
         case "GET":
-                // Return all projects with their test suites
-                var enrichedProjects []Project
-                for _, project := range projects {
-                        enrichedProject := project
-                        // Find test suites for this project
-                        var projectTestSuites []TestSuite
-                        for _, testSuite := range testSuites {
-                                if testSuite.ProjectID == project.ID {
-                                        projectTestSuites = append(projectTestSuites, testSuite)
-                                }
-                        }
-                        enrichedProjects = append(enrichedProjects, enrichedProject)
+                rows, err := db.Query("SELECT id, name, description, created_at, updated_at FROM projects ORDER BY created_at DESC")
+                if err != nil {
+                        http.Error(w, "Database error", http.StatusInternalServerError)
+                        log.Printf("Error querying projects: %v", err)
+                        return
                 }
-                json.NewEncoder(w).Encode(enrichedProjects)
-                
+                defer rows.Close()
+
+                var projects []Project
+                for rows.Next() {
+                        var p Project
+                        err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.CreatedAt, &p.UpdatedAt)
+                        if err != nil {
+                                http.Error(w, "Scan error", http.StatusInternalServerError)
+                                log.Printf("Error scanning project: %v", err)
+                                return
+                        }
+                        projects = append(projects, p)
+                }
+
+                json.NewEncoder(w).Encode(projects)
+
         case "POST":
                 var req struct {
                         Name        string `json:"name"`
@@ -302,16 +249,19 @@ func projectsAPIHandler(w http.ResponseWriter, r *http.Request) {
                         http.Error(w, "Name is required", http.StatusBadRequest)
                         return
                 }
-                
-                project := Project{
-                        ID:          nextProjectID,
-                        Name:        req.Name,
-                        Description: req.Description,
-                        CreatedAt:   "2025-01-21T" + fmt.Sprintf("%02d:00:00Z", len(projects)+10),
+
+                var project Project
+                err := db.QueryRow(
+                        "INSERT INTO projects (name, description) VALUES ($1, $2) RETURNING id, name, description, created_at, updated_at",
+                        req.Name, req.Description,
+                ).Scan(&project.ID, &project.Name, &project.Description, &project.CreatedAt, &project.UpdatedAt)
+
+                if err != nil {
+                        http.Error(w, "Database error", http.StatusInternalServerError)
+                        log.Printf("Error creating project: %v", err)
+                        return
                 }
-                nextProjectID++
-                projects = append(projects, project)
-                
+
                 w.WriteHeader(http.StatusCreated)
                 json.NewEncoder(w).Encode(project)
         }
@@ -326,23 +276,26 @@ func projectAPIHandler(w http.ResponseWriter, r *http.Request) {
                 http.Error(w, "Invalid project ID", http.StatusBadRequest)
                 return
         }
-        
-        var project *Project
-        for i := range projects {
-                if projects[i].ID == id {
-                        project = &projects[i]
-                        break
-                }
-        }
-        
-        if project == nil {
-                http.Error(w, "Project not found", http.StatusNotFound)
-                return
-        }
-        
+
         switch r.Method {
         case "GET":
+                var project Project
+                err := db.QueryRow(
+                        "SELECT id, name, description, created_at, updated_at FROM projects WHERE id = $1",
+                        id,
+                ).Scan(&project.ID, &project.Name, &project.Description, &project.CreatedAt, &project.UpdatedAt)
+
+                if err == sql.ErrNoRows {
+                        http.Error(w, "Project not found", http.StatusNotFound)
+                        return
+                } else if err != nil {
+                        http.Error(w, "Database error", http.StatusInternalServerError)
+                        log.Printf("Error querying project: %v", err)
+                        return
+                }
+
                 json.NewEncoder(w).Encode(project)
+
         case "PUT":
                 var req struct {
                         Name        string `json:"name"`
@@ -358,20 +311,43 @@ func projectAPIHandler(w http.ResponseWriter, r *http.Request) {
                         http.Error(w, "Name is required", http.StatusBadRequest)
                         return
                 }
-                
-                project.Name = req.Name
-                project.Description = req.Description
-                
-                json.NewEncoder(w).Encode(project)
-        case "DELETE":
-                // Remove project
-                for i := range projects {
-                        if projects[i].ID == id {
-                                projects = append(projects[:i], projects[i+1:]...)
-                                break
-                        }
+
+                var project Project
+                err := db.QueryRow(
+                        "UPDATE projects SET name = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, name, description, created_at, updated_at",
+                        req.Name, req.Description, id,
+                ).Scan(&project.ID, &project.Name, &project.Description, &project.CreatedAt, &project.UpdatedAt)
+
+                if err == sql.ErrNoRows {
+                        http.Error(w, "Project not found", http.StatusNotFound)
+                        return
+                } else if err != nil {
+                        http.Error(w, "Database error", http.StatusInternalServerError)
+                        log.Printf("Error updating project: %v", err)
+                        return
                 }
-                
+
+                json.NewEncoder(w).Encode(project)
+
+        case "DELETE":
+                result, err := db.Exec("DELETE FROM projects WHERE id = $1", id)
+                if err != nil {
+                        http.Error(w, "Database error", http.StatusInternalServerError)
+                        log.Printf("Error deleting project: %v", err)
+                        return
+                }
+
+                rowsAffected, err := result.RowsAffected()
+                if err != nil {
+                        http.Error(w, "Database error", http.StatusInternalServerError)
+                        return
+                }
+
+                if rowsAffected == 0 {
+                        http.Error(w, "Project not found", http.StatusNotFound)
+                        return
+                }
+
                 w.WriteHeader(http.StatusOK)
                 json.NewEncoder(w).Encode(map[string]string{"message": "Project deleted successfully"})
         }
@@ -383,23 +359,62 @@ func testSuitesAPIHandler(w http.ResponseWriter, r *http.Request) {
         switch r.Method {
         case "GET":
                 projectIDStr := r.URL.Query().Get("project_id")
-                var filteredTestSuites []TestSuite
                 
-                for _, testSuite := range testSuites {
-                        if projectIDStr == "" || testSuite.ProjectID == mustParseInt(projectIDStr) {
-                                // Add project info
-                                for _, project := range projects {
-                                        if project.ID == testSuite.ProjectID {
-                                                testSuite.Project = project
-                                                break
-                                        }
-                                }
-                                filteredTestSuites = append(filteredTestSuites, testSuite)
+                var query string
+                var args []interface{}
+                
+                if projectIDStr != "" {
+                        query = `
+                                SELECT ts.id, ts.name, ts.description, ts.project_id, ts.created_at, ts.updated_at,
+                                       p.id, p.name, p.description, p.created_at, p.updated_at
+                                FROM test_suites ts
+                                JOIN projects p ON ts.project_id = p.id
+                                WHERE ts.project_id = $1
+                                ORDER BY ts.created_at DESC
+                        `
+                        projectID, err := strconv.Atoi(projectIDStr)
+                        if err != nil {
+                                http.Error(w, "Invalid project_id", http.StatusBadRequest)
+                                return
                         }
+                        args = []interface{}{projectID}
+                } else {
+                        query = `
+                                SELECT ts.id, ts.name, ts.description, ts.project_id, ts.created_at, ts.updated_at,
+                                       p.id, p.name, p.description, p.created_at, p.updated_at
+                                FROM test_suites ts
+                                JOIN projects p ON ts.project_id = p.id
+                                ORDER BY ts.created_at DESC
+                        `
                 }
-                
-                json.NewEncoder(w).Encode(filteredTestSuites)
-                
+
+                rows, err := db.Query(query, args...)
+                if err != nil {
+                        http.Error(w, "Database error", http.StatusInternalServerError)
+                        log.Printf("Error querying test suites: %v", err)
+                        return
+                }
+                defer rows.Close()
+
+                var testSuites []TestSuite
+                for rows.Next() {
+                        var ts TestSuite
+                        var p Project
+                        err := rows.Scan(
+                                &ts.ID, &ts.Name, &ts.Description, &ts.ProjectID, &ts.CreatedAt, &ts.UpdatedAt,
+                                &p.ID, &p.Name, &p.Description, &p.CreatedAt, &p.UpdatedAt,
+                        )
+                        if err != nil {
+                                http.Error(w, "Scan error", http.StatusInternalServerError)
+                                log.Printf("Error scanning test suite: %v", err)
+                                return
+                        }
+                        ts.Project = &p
+                        testSuites = append(testSuites, ts)
+                }
+
+                json.NewEncoder(w).Encode(testSuites)
+
         case "POST":
                 var req struct {
                         Name        string `json:"name"`
@@ -416,17 +431,19 @@ func testSuitesAPIHandler(w http.ResponseWriter, r *http.Request) {
                         http.Error(w, "Name and project_id are required", http.StatusBadRequest)
                         return
                 }
-                
-                testSuite := TestSuite{
-                        ID:          nextTestSuiteID,
-                        Name:        req.Name,
-                        Description: req.Description,
-                        ProjectID:   req.ProjectID,
-                        CreatedAt:   "2025-01-21T" + fmt.Sprintf("%02d:00:00Z", len(testSuites)+10),
+
+                var testSuite TestSuite
+                err := db.QueryRow(
+                        "INSERT INTO test_suites (name, description, project_id) VALUES ($1, $2, $3) RETURNING id, name, description, project_id, created_at, updated_at",
+                        req.Name, req.Description, req.ProjectID,
+                ).Scan(&testSuite.ID, &testSuite.Name, &testSuite.Description, &testSuite.ProjectID, &testSuite.CreatedAt, &testSuite.UpdatedAt)
+
+                if err != nil {
+                        http.Error(w, "Database error", http.StatusInternalServerError)
+                        log.Printf("Error creating test suite: %v", err)
+                        return
                 }
-                nextTestSuiteID++
-                testSuites = append(testSuites, testSuite)
-                
+
                 w.WriteHeader(http.StatusCreated)
                 json.NewEncoder(w).Encode(testSuite)
         }
@@ -441,30 +458,33 @@ func testSuiteAPIHandler(w http.ResponseWriter, r *http.Request) {
                 http.Error(w, "Invalid test suite ID", http.StatusBadRequest)
                 return
         }
-        
-        var testSuite *TestSuite
-        for i := range testSuites {
-                if testSuites[i].ID == id {
-                        testSuite = &testSuites[i]
-                        break
-                }
-        }
-        
-        if testSuite == nil {
-                http.Error(w, "Test suite not found", http.StatusNotFound)
-                return
-        }
-        
+
         switch r.Method {
         case "GET":
-                // Add project info
-                for _, project := range projects {
-                        if project.ID == testSuite.ProjectID {
-                                testSuite.Project = project
-                                break
-                        }
+                var ts TestSuite
+                var p Project
+                err := db.QueryRow(`
+                        SELECT ts.id, ts.name, ts.description, ts.project_id, ts.created_at, ts.updated_at,
+                               p.id, p.name, p.description, p.created_at, p.updated_at
+                        FROM test_suites ts
+                        JOIN projects p ON ts.project_id = p.id
+                        WHERE ts.id = $1
+                `, id).Scan(
+                        &ts.ID, &ts.Name, &ts.Description, &ts.ProjectID, &ts.CreatedAt, &ts.UpdatedAt,
+                        &p.ID, &p.Name, &p.Description, &p.CreatedAt, &p.UpdatedAt,
+                )
+
+                if err == sql.ErrNoRows {
+                        http.Error(w, "Test suite not found", http.StatusNotFound)
+                        return
+                } else if err != nil {
+                        http.Error(w, "Database error", http.StatusInternalServerError)
+                        log.Printf("Error querying test suite: %v", err)
+                        return
                 }
-                json.NewEncoder(w).Encode(testSuite)
+
+                ts.Project = &p
+                json.NewEncoder(w).Encode(ts)
         }
 }
 
@@ -474,30 +494,69 @@ func testCasesAPIHandler(w http.ResponseWriter, r *http.Request) {
         switch r.Method {
         case "GET":
                 testSuiteIDStr := r.URL.Query().Get("test_suite_id")
-                var filteredTestCases []TestCase
                 
-                for _, testCase := range testCases {
-                        if testSuiteIDStr == "" || testCase.TestSuiteID == mustParseInt(testSuiteIDStr) {
-                                // Add test suite info
-                                for _, testSuite := range testSuites {
-                                        if testSuite.ID == testCase.TestSuiteID {
-                                                testCase.TestSuite = testSuite
-                                                // Add project info to test suite
-                                                for _, project := range projects {
-                                                        if project.ID == testSuite.ProjectID {
-                                                                testCase.TestSuite.Project = project
-                                                                break
-                                                        }
-                                                }
-                                                break
-                                        }
-                                }
-                                filteredTestCases = append(filteredTestCases, testCase)
+                var query string
+                var args []interface{}
+                
+                if testSuiteIDStr != "" {
+                        query = `
+                                SELECT tc.id, tc.title, tc.description, tc.priority, tc.status, tc.test_suite_id, tc.created_at, tc.updated_at,
+                                       ts.id, ts.name, ts.description, ts.project_id, ts.created_at, ts.updated_at,
+                                       p.id, p.name, p.description, p.created_at, p.updated_at
+                                FROM test_cases tc
+                                JOIN test_suites ts ON tc.test_suite_id = ts.id
+                                JOIN projects p ON ts.project_id = p.id
+                                WHERE tc.test_suite_id = $1
+                                ORDER BY tc.created_at DESC
+                        `
+                        testSuiteID, err := strconv.Atoi(testSuiteIDStr)
+                        if err != nil {
+                                http.Error(w, "Invalid test_suite_id", http.StatusBadRequest)
+                                return
                         }
+                        args = []interface{}{testSuiteID}
+                } else {
+                        query = `
+                                SELECT tc.id, tc.title, tc.description, tc.priority, tc.status, tc.test_suite_id, tc.created_at, tc.updated_at,
+                                       ts.id, ts.name, ts.description, ts.project_id, ts.created_at, ts.updated_at,
+                                       p.id, p.name, p.description, p.created_at, p.updated_at
+                                FROM test_cases tc
+                                JOIN test_suites ts ON tc.test_suite_id = ts.id
+                                JOIN projects p ON ts.project_id = p.id
+                                ORDER BY tc.created_at DESC
+                        `
                 }
-                
-                json.NewEncoder(w).Encode(filteredTestCases)
-                
+
+                rows, err := db.Query(query, args...)
+                if err != nil {
+                        http.Error(w, "Database error", http.StatusInternalServerError)
+                        log.Printf("Error querying test cases: %v", err)
+                        return
+                }
+                defer rows.Close()
+
+                var testCases []TestCase
+                for rows.Next() {
+                        var tc TestCase
+                        var ts TestSuite
+                        var p Project
+                        err := rows.Scan(
+                                &tc.ID, &tc.Title, &tc.Description, &tc.Priority, &tc.Status, &tc.TestSuiteID, &tc.CreatedAt, &tc.UpdatedAt,
+                                &ts.ID, &ts.Name, &ts.Description, &ts.ProjectID, &ts.CreatedAt, &ts.UpdatedAt,
+                                &p.ID, &p.Name, &p.Description, &p.CreatedAt, &p.UpdatedAt,
+                        )
+                        if err != nil {
+                                http.Error(w, "Scan error", http.StatusInternalServerError)
+                                log.Printf("Error scanning test case: %v", err)
+                                return
+                        }
+                        ts.Project = &p
+                        tc.TestSuite = &ts
+                        testCases = append(testCases, tc)
+                }
+
+                json.NewEncoder(w).Encode(testCases)
+
         case "POST":
                 var req struct {
                         Title       string `json:"title"`
@@ -519,19 +578,19 @@ func testCasesAPIHandler(w http.ResponseWriter, r *http.Request) {
                 if req.Priority == "" {
                         req.Priority = "Medium"
                 }
-                
-                testCase := TestCase{
-                        ID:          nextTestCaseID,
-                        Title:       req.Title,
-                        Description: req.Description,
-                        Priority:    req.Priority,
-                        Status:      "Active",
-                        TestSuiteID: req.TestSuiteID,
-                        CreatedAt:   "2025-01-21T" + fmt.Sprintf("%02d:00:00Z", len(testCases)+10),
+
+                var testCase TestCase
+                err := db.QueryRow(
+                        "INSERT INTO test_cases (title, description, priority, test_suite_id) VALUES ($1, $2, $3, $4) RETURNING id, title, description, priority, status, test_suite_id, created_at, updated_at",
+                        req.Title, req.Description, req.Priority, req.TestSuiteID,
+                ).Scan(&testCase.ID, &testCase.Title, &testCase.Description, &testCase.Priority, &testCase.Status, &testCase.TestSuiteID, &testCase.CreatedAt, &testCase.UpdatedAt)
+
+                if err != nil {
+                        http.Error(w, "Database error", http.StatusInternalServerError)
+                        log.Printf("Error creating test case: %v", err)
+                        return
                 }
-                nextTestCaseID++
-                testCases = append(testCases, testCase)
-                
+
                 w.WriteHeader(http.StatusCreated)
                 json.NewEncoder(w).Encode(testCase)
         }
@@ -546,40 +605,37 @@ func testCaseAPIHandler(w http.ResponseWriter, r *http.Request) {
                 http.Error(w, "Invalid test case ID", http.StatusBadRequest)
                 return
         }
-        
-        var testCase *TestCase
-        for i := range testCases {
-                if testCases[i].ID == id {
-                        testCase = &testCases[i]
-                        break
-                }
-        }
-        
-        if testCase == nil {
-                http.Error(w, "Test case not found", http.StatusNotFound)
-                return
-        }
-        
+
         switch r.Method {
         case "GET":
-                // Add test suite and project info
-                for _, testSuite := range testSuites {
-                        if testSuite.ID == testCase.TestSuiteID {
-                                testCase.TestSuite = testSuite
-                                for _, project := range projects {
-                                        if project.ID == testSuite.ProjectID {
-                                                testCase.TestSuite.Project = project
-                                                break
-                                        }
-                                }
-                                break
-                        }
-                }
-                json.NewEncoder(w).Encode(testCase)
-        }
-}
+                var tc TestCase
+                var ts TestSuite
+                var p Project
+                err := db.QueryRow(`
+                        SELECT tc.id, tc.title, tc.description, tc.priority, tc.status, tc.test_suite_id, tc.created_at, tc.updated_at,
+                               ts.id, ts.name, ts.description, ts.project_id, ts.created_at, ts.updated_at,
+                               p.id, p.name, p.description, p.created_at, p.updated_at
+                        FROM test_cases tc
+                        JOIN test_suites ts ON tc.test_suite_id = ts.id
+                        JOIN projects p ON ts.project_id = p.id
+                        WHERE tc.id = $1
+                `, id).Scan(
+                        &tc.ID, &tc.Title, &tc.Description, &tc.Priority, &tc.Status, &tc.TestSuiteID, &tc.CreatedAt, &tc.UpdatedAt,
+                        &ts.ID, &ts.Name, &ts.Description, &ts.ProjectID, &ts.CreatedAt, &ts.UpdatedAt,
+                        &p.ID, &p.Name, &p.Description, &p.CreatedAt, &p.UpdatedAt,
+                )
 
-func mustParseInt(s string) int {
-        i, _ := strconv.Atoi(s)
-        return i
+                if err == sql.ErrNoRows {
+                        http.Error(w, "Test case not found", http.StatusNotFound)
+                        return
+                } else if err != nil {
+                        http.Error(w, "Database error", http.StatusInternalServerError)
+                        log.Printf("Error querying test case: %v", err)
+                        return
+                }
+
+                ts.Project = &p
+                tc.TestSuite = &ts
+                json.NewEncoder(w).Encode(tc)
+        }
 }

@@ -4,11 +4,14 @@ This is a Test Management Platform built as a web application for organizing and
 
 ## Recent Changes (August 2025)
 - Built working Go implementation using standard library (simple_main.go)
-- Added complete Docker containerization support for local deployment
-- Created multi-stage Dockerfile with optimized Alpine Linux build
-- Added Docker Compose configuration for easy local development
-- Implemented in-memory data storage with sample test data
-- Successfully deployed on port 5000 with web interface
+- **MAJOR REFACTOR**: Migrated from in-memory storage to PostgreSQL database
+- Added PostgreSQL driver (lib/pq) and full database integration
+- Created comprehensive database schema with proper relationships and indexes
+- Updated Docker containerization with PostgreSQL support and orchestration
+- Modified Docker Compose to include PostgreSQL service with persistent volumes
+- Added database initialization scripts and sample data seeding
+- Successfully deployed on port 5000 with persistent PostgreSQL backend
+- All CRUD operations now use authentic PostgreSQL data with ACID compliance
 
 # User Preferences
 
