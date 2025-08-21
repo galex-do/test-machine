@@ -925,6 +925,33 @@ function showExecutionModal(executionId) {
     document.getElementById('executionId').value = executionId;
 }
 
+function editProject(projectId) {
+    API.getProject(projectId).then(project => {
+        $('#projectModal').modal('show');
+        document.getElementById('projectModalTitle').textContent = 'Edit Project';
+        document.getElementById('projectId').value = project.id;
+        document.getElementById('projectName').value = project.name;
+        document.getElementById('projectDescription').value = project.description || '';
+    });
+}
+
+function editTestCase(testCaseId) {
+    API.getTestCase(testCaseId).then(testCase => {
+        $('#testCaseModal').modal('show');
+        document.getElementById('testCaseModalTitle').textContent = 'Edit Test Case';
+        document.getElementById('testCaseId').value = testCase.id;
+        document.getElementById('testCaseTitle').value = testCase.title;
+        document.getElementById('testCaseDescription').value = testCase.description || '';
+        document.getElementById('testCasePriority').value = testCase.priority;
+        document.getElementById('testSuiteId').value = testCase.test_suite_id;
+    });
+}
+
+function createTestRun(testSuiteId) {
+    currentTestSuite = testSuiteId;
+    showCreateTestRunModal();
+}
+
 // Form submission handlers
 function handleProjectForm() {
     const form = document.getElementById('projectForm');
