@@ -1,2 +1,35 @@
+modules = ["go"]
 [agent]
 expertMode = true
+
+[nix]
+channel = "stable-25_05"
+packages = ["go"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Test Management Server"
+
+[[workflows.workflow]]
+name = "Test Management Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "go run simple_main.go"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80

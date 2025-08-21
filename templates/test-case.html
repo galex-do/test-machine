@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}} - Test Management Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-clipboard-check"></i> Test Management Platform
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports">
+                            <i class="fas fa-chart-bar"></i> Reports
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/">
+                                <i class="fas fa-tachometer-alt"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" onclick="loadTestCaseDetails({{.testCaseID}})">
+                                <i class="fas fa-clipboard-list"></i>
+                                Test Case Details
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/reports">
+                                <i class="fas fa-chart-line"></i>
+                                Reports
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-10 ms-sm-auto px-md-4">
+                <!-- Breadcrumb -->
+                <nav aria-label="breadcrumb" class="pt-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="#" id="project-link">Project</a></li>
+                        <li class="breadcrumb-item"><a href="#" id="test-suite-link">Test Suite</a></li>
+                        <li class="breadcrumb-item active">Test Case Details</li>
+                    </ol>
+                </nav>
+
+                <!-- Test Case Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <div>
+                        <h1 class="h2">
+                            <i class="fas fa-clipboard-list"></i> <span id="test-case-title">Loading...</span>
+                        </h1>
+                        <p class="text-muted" id="test-case-description">Loading description...</p>
+                        <div class="mb-2">
+                            <span class="me-3">
+                                <strong>Priority:</strong> <span id="test-case-priority">Loading...</span>
+                            </span>
+                            <span class="me-3">
+                                <strong>Status:</strong> <span id="test-case-status">Loading...</span>
+                            </span>
+                        </div>
+                        <small class="text-muted">
+                            Project: <span id="project-name">Loading...</span> | 
+                            Test Suite: <span id="test-suite-name">Loading...</span>
+                        </small>
+                    </div>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-primary" onclick="showCreateTestStepModal()">
+                                <i class="fas fa-plus"></i> Add Step
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="editTestCase({{.testCaseID}})">
+                                <i class="fas fa-edit"></i> Edit Test Case
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts -->
+                <div id="alerts"></div>
+
+                <!-- Test Case Details -->
+                <div id="test-case-details">
+                    <!-- Test Steps Section -->
+                    <div class="main-content">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3>
+                                <i class="fas fa-list-ol"></i> Test Steps
+                            </h3>
+                            <button class="btn btn-primary" onclick="showCreateTestStepModal()">
+                                <i class="fas fa-plus"></i> Add Test Step
+                            </button>
+                        </div>
+                        <div id="test-steps-container">
+                            <!-- Test steps will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Create/Edit Test Step Modal -->
+    <div class="modal fade" id="testStepModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="testStepModalTitle">Add New Test Step</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="testStepForm" onsubmit="return handleTestStepForm()">
+                    <div class="modal-body">
+                        <input type="hidden" id="testStepId" name="id">
+                        <div class="mb-3">
+                            <label for="testStepNumber" class="form-label">Step Number *</label>
+                            <input type="number" class="form-control" id="testStepNumber" name="step_number" required min="1">
+                        </div>
+                        <div class="mb-3">
+                            <label for="testStepDescription" class="form-label">Step Description *</label>
+                            <textarea class="form-control" id="testStepDescription" name="description" rows="3" required placeholder="Describe what action should be performed"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="testStepExpectedResult" class="form-label">Expected Result *</label>
+                            <textarea class="form-control" id="testStepExpectedResult" name="expected_result" rows="3" required placeholder="Describe the expected outcome of this step"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Test Step
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Test Case Modal -->
+    <div class="modal fade" id="testCaseModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="testCaseModalTitle">Edit Test Case</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="testCaseForm" onsubmit="return handleTestCaseForm()">
+                    <div class="modal-body">
+                        <input type="hidden" id="testCaseId" name="id" value="{{.testCaseID}}">
+                        <input type="hidden" id="testSuiteId" name="test_suite_id">
+                        <div class="mb-3">
+                            <label for="testCaseTitle" class="form-label">Test Case Title *</label>
+                            <input type="text" class="form-control" id="testCaseTitle" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="testCaseDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="testCaseDescriptionEdit" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="testCasePriority" class="form-label">Priority</label>
+                            <select class="form-select" id="testCasePriority" name="priority">
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="testCaseStatus" class="form-label">Status</label>
+                            <select class="form-select" id="testCaseStatus" name="status">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="Deprecated">Deprecated</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        // Initialize the test case page
+        $(document).ready(function() {
+            loadTestCaseDetails({{.testCaseID}});
+        });
+
+        // Edit test case function
+        function editTestCase(testCaseId) {
+            API.getTestCase(testCaseId).then(testCase => {
+                document.getElementById('testCaseTitle').value = testCase.title;
+                document.getElementById('testCaseDescriptionEdit').value = testCase.description || '';
+                document.getElementById('testCasePriority').value = testCase.priority;
+                document.getElementById('testCaseStatus').value = testCase.status;
+                document.getElementById('testSuiteId').value = testCase.test_suite_id;
+                $('#testCaseModal').modal('show');
+            });
+        }
+
+        // Edit test step function
+        function editTestStep(testStepId) {
+            // Find the test step in the loaded data and populate the modal
+            document.getElementById('testStepModalTitle').textContent = 'Edit Test Step';
+            document.getElementById('testStepId').value = testStepId;
+            $('#testStepModal').modal('show');
+        }
+
+        // Delete test step function
+        function deleteTestStep(testStepId) {
+            if (confirm('Are you sure you want to delete this test step?')) {
+                API.deleteTestStep(testStepId).then(() => {
+                    showAlert('Test step deleted successfully');
+                    loadTestCaseDetails({{.testCaseID}});
+                });
+            }
+        }
+    </script>
+</body>
+</html>

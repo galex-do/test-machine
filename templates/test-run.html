@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}} - Test Management Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-clipboard-check"></i> Test Management Platform
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports">
+                            <i class="fas fa-chart-bar"></i> Reports
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/">
+                                <i class="fas fa-tachometer-alt"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" onclick="loadTestRunDetails({{.testRunID}})">
+                                <i class="fas fa-play-circle"></i>
+                                Test Run Details
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/reports">
+                                <i class="fas fa-chart-line"></i>
+                                Reports
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-10 ms-sm-auto px-md-4">
+                <!-- Breadcrumb -->
+                <nav aria-label="breadcrumb" class="pt-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="#" id="project-link">Project</a></li>
+                        <li class="breadcrumb-item"><a href="#" id="test-suite-link">Test Suite</a></li>
+                        <li class="breadcrumb-item active">Test Run Details</li>
+                    </ol>
+                </nav>
+
+                <!-- Test Run Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <div>
+                        <h1 class="h2">
+                            <i class="fas fa-play-circle"></i> <span id="test-run-name">Loading...</span>
+                        </h1>
+                        <p class="text-muted" id="test-run-description">Loading description...</p>
+                        <div class="mb-2">
+                            <span class="me-3">
+                                <strong>Status:</strong> <span id="test-run-status">Loading...</span>
+                            </span>
+                            <span class="me-3">
+                                <strong>Started:</strong> <span id="started-at">Loading...</span>
+                            </span>
+                            <span class="me-3">
+                                <strong>Completed:</strong> <span id="completed-at">Loading...</span>
+                            </span>
+                        </div>
+                        <small class="text-muted">
+                            Project: <span id="project-name">Loading...</span> | 
+                            Test Suite: <span id="test-suite-name">Loading...</span>
+                        </small>
+                    </div>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-outline-primary" onclick="exportTestRunReport()">
+                                <i class="fas fa-download"></i> Export Results
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="editTestRun({{.testRunID}})">
+                                <i class="fas fa-edit"></i> Edit Run
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts -->
+                <div id="alerts"></div>
+
+                <!-- Test Run Details -->
+                <div id="test-run-details">
+                    <!-- Execution Statistics -->
+                    <div class="main-content mb-4">
+                        <h3 class="mb-4">
+                            <i class="fas fa-chart-pie"></i> Execution Statistics
+                        </h3>
+                        <div id="execution-stats">
+                            <!-- Statistics will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Test Executions -->
+                    <div class="main-content">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3>
+                                <i class="fas fa-clipboard-check"></i> Test Executions
+                            </h3>
+                            <div class="btn-group">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                                    <i class="fas fa-filter"></i> Filter by Status
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="filterExecutions('all')">All</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="filterExecutions('Not Executed')">Not Executed</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="filterExecutions('Pass')">Passed</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="filterExecutions('Fail')">Failed</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="filterExecutions('Blocked')">Blocked</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="filterExecutions('Skip')">Skipped</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div id="test-executions-container">
+                            <!-- Test executions will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Update Test Execution Modal -->
+    <div class="modal fade" id="executionModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Test Execution</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="executionForm" onsubmit="return handleExecutionForm()">
+                    <div class="modal-body">
+                        <input type="hidden" id="executionId" name="id">
+                        <div class="mb-3">
+                            <label for="executionStatus" class="form-label">Execution Status *</label>
+                            <select class="form-select" id="executionStatus" name="status" required>
+                                <option value="Not Executed">Not Executed</option>
+                                <option value="Pass">Pass</option>
+                                <option value="Fail">Fail</option>
+                                <option value="Blocked">Blocked</option>
+                                <option value="Skip">Skip</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="executionNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="executionNotes" name="notes" rows="4" placeholder="Add any notes about the test execution, issues encountered, etc."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="executedBy" class="form-label">Executed By</label>
+                            <input type="text" class="form-control" id="executedBy" name="executed_by" placeholder="Enter tester name">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Update Execution
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Test Run Modal -->
+    <div class="modal fade" id="testRunModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="testRunModalTitle">Edit Test Run</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="testRunForm" onsubmit="return handleTestRunForm()">
+                    <div class="modal-body">
+                        <input type="hidden" id="testRunId" name="id" value="{{.testRunID}}">
+                        <input type="hidden" id="testSuiteId" name="test_suite_id">
+                        <div class="mb-3">
+                            <label for="testRunName" class="form-label">Test Run Name *</label>
+                            <input type="text" class="form-control" id="testRunName" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="testRunDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="testRunDescription" name="description" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        let currentExecutions = [];
+
+        // Initialize the test run page
+        $(document).ready(function() {
+            loadTestRunDetails({{.testRunID}});
+        });
+
+        // Filter executions by status
+        function filterExecutions(status) {
+            if (status === 'all') {
+                renderTestExecutions(currentExecutions);
+            } else {
+                const filtered = currentExecutions.filter(execution => execution.status === status);
+                renderTestExecutions(filtered);
+            }
+        }
+
+        // Enhanced execution modal function
+        function showExecutionModal(executionId) {
+            const execution = currentExecutions.find(e => e.id === executionId);
+            if (execution) {
+                document.getElementById('executionId').value = executionId;
+                document.getElementById('executionStatus').value = execution.status;
+                document.getElementById('executionNotes').value = execution.notes || '';
+                document.getElementById('executedBy').value = execution.executed_by || '';
+            }
+            $('#executionModal').modal('show');
+        }
+
+        // Edit test run function
+        function editTestRun(testRunId) {
+            API.getTestRun(testRunId).then(testRun => {
+                document.getElementById('testRunName').value = testRun.name;
+                document.getElementById('testRunDescription').value = testRun.description || '';
+                document.getElementById('testSuiteId').value = testRun.test_suite_id;
+                $('#testRunModal').modal('show');
+            });
+        }
+
+        // Export test run report
+        function exportTestRunReport() {
+            const format = prompt('Export format (csv or json):', 'csv');
+            if (format === 'csv' || format === 'json') {
+                API.exportReport(format);
+            }
+        }
+
+        // Override the renderTestExecutions function to store executions
+        const originalRenderTestExecutions = window.renderTestExecutions;
+        window.renderTestExecutions = function(executions) {
+            currentExecutions = executions;
+            if (originalRenderTestExecutions) {
+                originalRenderTestExecutions(executions);
+            }
+        };
+    </script>
+</body>
+</html>
