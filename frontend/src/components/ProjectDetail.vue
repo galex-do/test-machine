@@ -17,6 +17,9 @@
         <p class="text-muted">{{ project?.description || 'No description available' }}</p>
         <p v-if="project?.git_project" class="text-muted">
           <i class="fab fa-git-alt"></i> <strong>Git Project:</strong> {{ project.git_project }}
+          <span v-if="project?.key" class="ms-3">
+            <i class="fas fa-key"></i> <strong>Auth:</strong> {{ project.key.name }} ({{ project.key.key_type }})
+          </span>
         </p>
       </div>
       <div class="btn-toolbar mb-2 mb-md-0">

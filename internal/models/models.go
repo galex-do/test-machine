@@ -8,9 +8,11 @@ type Project struct {
         Name            string    `json:"name"`
         Description     string    `json:"description"`
         GitProject      *string   `json:"git_project,omitempty"`
+        KeyID           *int      `json:"key_id,omitempty"`
         CreatedAt       time.Time `json:"created_at"`
         UpdatedAt       time.Time `json:"updated_at"`
         TestSuitesCount int       `json:"test_suites_count,omitempty"`
+        Key             *Key      `json:"key,omitempty"`
 }
 
 // TestSuite represents a collection of test cases
@@ -73,6 +75,7 @@ type CreateProjectRequest struct {
         Name        string  `json:"name"`
         Description string  `json:"description"`
         GitProject  *string `json:"git_project"`
+        KeyID       *int    `json:"key_id"`
 }
 
 // UpdateProjectRequest represents the request to update a project
@@ -80,6 +83,7 @@ type UpdateProjectRequest struct {
         Name        string  `json:"name"`
         Description string  `json:"description"`
         GitProject  *string `json:"git_project"`
+        KeyID       *int    `json:"key_id"`
 }
 
 // CreateTestSuiteRequest represents the request to create a new test suite
