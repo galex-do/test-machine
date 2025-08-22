@@ -21,9 +21,9 @@
                 <label for="testCasePriority" class="form-label">Priority *</label>
                 <select class="form-select" id="testCasePriority" v-model="form.priority" required>
                   <option value="">Select Priority</option>
-                  <option value="HIGH">High</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="LOW">Low</option>
+                  <option value="Critical">Critical</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
                 </select>
               </div>
               <div class="col-md-6 mb-3">
@@ -75,7 +75,7 @@ export default {
       form: {
         title: '',
         description: '',
-        priority: '',
+        priority: 'Medium',
         status: 'Active',
         test_suite_id: this.testSuiteId
       },
@@ -110,7 +110,7 @@ export default {
       this.form = {
         title: '',
         description: '',
-        priority: '',
+        priority: 'Medium',
         status: 'Active',
         test_suite_id: this.testSuiteId
       }
