@@ -33,7 +33,7 @@
       </div>
       <div class="card-body">
         <div v-if="loading" v-html="showLoading()"></div>
-        <div v-else-if="testCases.length === 0" class="empty-state">
+        <div v-else-if="!testCases || testCases.length === 0" class="empty-state">
           <i class="fas fa-list-check"></i>
           <h5>No Test Cases Found</h5>
           <p>Create test cases to define your testing procedures.</p>
@@ -152,9 +152,10 @@ export default {
           api.getTestCases(this.sid)
         ])
         this.testSuite = testSuiteData
-        this.testCases = testCasesData
+        this.testCases = Array.isArray(testCasesData) ? testCasesData : []
       } catch (error) {
         showAlert('Error loading test suite data: ' + error.message, 'danger')
+        this.testCases = [] // Ensure testCases is always an array
       } finally {
         this.loading = false
       }
