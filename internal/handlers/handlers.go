@@ -38,6 +38,7 @@ func (h *Handler) SetupRoutes() http.Handler {
         mux.HandleFunc("/api/test-cases/", h.testCaseAPIHandler)
         mux.HandleFunc("/api/test-runs", h.testRunsAPIHandler)
         mux.HandleFunc("/api/test-runs/", h.testRunAPIHandler)
+        mux.HandleFunc("/api/test-steps/", h.testStepAPIHandler)
         mux.HandleFunc("/api/stats", h.statsAPIHandler)
 
         // Add CORS middleware
