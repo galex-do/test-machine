@@ -30,11 +30,8 @@
                 <label for="testCaseStatus" class="form-label">Status *</label>
                 <select class="form-select" id="testCaseStatus" v-model="form.status" required>
                   <option value="">Select Status</option>
-                  <option value="Not Executed">Not Executed</option>
-                  <option value="Pass">Pass</option>
-                  <option value="Fail">Fail</option>
-                  <option value="Blocked">Blocked</option>
-                  <option value="Skip">Skip</option>
+                  <option value="Active">Active</option>
+                  <option value="Disabled">Disabled</option>
                 </select>
               </div>
             </div>
@@ -79,7 +76,7 @@ export default {
         title: '',
         description: '',
         priority: '',
-        status: 'Not Executed',
+        status: 'Active',
         test_suite_id: this.testSuiteId
       },
       saving: false
@@ -114,7 +111,7 @@ export default {
         title: '',
         description: '',
         priority: '',
-        status: 'Not Executed',
+        status: 'Active',
         test_suite_id: this.testSuiteId
       }
     },

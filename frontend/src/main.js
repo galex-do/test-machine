@@ -1,6 +1,6 @@
-import { createApp } from 'vue'
-import { createRouter, createWebHistory } from 'vue-router'
-import App from './App.vue'
+// Use global CDN versions
+const { createApp } = Vue
+const { createRouter, createWebHistory } = VueRouter
 
 // Import components
 import Dashboard from './components/Dashboard.vue'
@@ -28,6 +28,24 @@ const router = createRouter({
   routes
 })
 
-const app = createApp(App)
-app.use(router)
-app.mount('#app')
+// Load App component dynamically since we can't import it
+fetch('./src/App.vue')
+  .then(response => response.text())
+  .then(template => {
+    const app = createApp({
+      template: `<div id="app">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+          <div class="container-fluid">
+            <router-link to="/" class="navbar-brand">
+              <i class="fas fa-clipboard-check"></i> Test Management Platform
+            </router-link>
+          </div>
+        </nav>
+        <div class="container-fluid">
+          <router-view></router-view>
+        </div>
+      </div>`
+    })
+    app.use(router)
+    app.mount('#app')
+  })
