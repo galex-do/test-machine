@@ -1156,6 +1156,10 @@ function showCreateTestStepModal() {
     document.getElementById('testStepModalTitle').textContent = 'Add New Test Step';
     document.getElementById('testStepId').value = '';
     
+    // Make step number readonly for creation (auto-calculated)
+    const stepNumberField = document.getElementById('testStepNumber');
+    stepNumberField.setAttribute('readonly', true);
+    
     // Auto-calculate next step number
     API.getTestSteps(currentTestCase).then(testSteps => {
         let nextStepNumber = 1;
@@ -1163,11 +1167,11 @@ function showCreateTestStepModal() {
             const maxStepNumber = Math.max(...testSteps.map(step => step.step_number));
             nextStepNumber = maxStepNumber + 1;
         }
-        document.getElementById('testStepNumber').value = nextStepNumber;
+        stepNumberField.value = nextStepNumber;
     }).catch(error => {
         console.error('Error getting test steps for auto-numbering:', error);
         // Fallback to step number 1 if there's an error
-        document.getElementById('testStepNumber').value = 1;
+        stepNumberField.value = 1;
     });
 }
 
@@ -1328,16 +1332,42 @@ function handleTestStepForm() {
 }
 
 function editTestStep(testStepId) {
+    console.log('Editing test step with ID:', testStepId);
+    
     // Find the test step data in currently loaded steps or fetch it
     API.getTestSteps(currentTestCase).then(testSteps => {
+        console.log('Loaded test steps:', testSteps);
         const testStep = testSteps.find(step => step.id === testStepId);
+        console.log('Found test step:', testStep);
+        
         if (testStep) {
-            document.getElementById('testStepModalTitle').textContent = 'Edit Test Step';
-            document.getElementById('testStepId').value = testStep.id;
-            document.getElementById('testStepNumber').value = testStep.step_number;
-            document.getElementById('testStepDescription').value = testStep.description;
-            document.getElementById('testStepExpectedResult').value = testStep.expected_result;
+            // Show the modal first
             $('#testStepModal').modal('show');
+            
+            // Use a small delay to ensure modal is fully shown before setting values
+            setTimeout(() => {
+                console.log('Setting form values...');
+                document.getElementById('testStepModalTitle').textContent = 'Edit Test Step';
+                document.getElementById('testStepId').value = testStep.id;
+                
+                // Make step number editable for editing
+                const stepNumberField = document.getElementById('testStepNumber');
+                stepNumberField.removeAttribute('readonly');
+                stepNumberField.value = testStep.step_number;
+                
+                document.getElementById('testStepDescription').value = testStep.description;
+                document.getElementById('testStepExpectedResult').value = testStep.expected_result;
+                
+                console.log('Form values set:', {
+                    id: testStep.id,
+                    step_number: testStep.step_number,
+                    description: testStep.description,
+                    expected_result: testStep.expected_result
+                });
+            }, 100);
+        } else {
+            console.error('Test step not found with ID:', testStepId);
+            showAlert('Test step not found', 'danger');
         }
     }).catch(error => {
         console.error('Error loading test step for editing:', error);
