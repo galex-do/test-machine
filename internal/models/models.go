@@ -35,6 +35,18 @@ type TestCase struct {
         CreatedAt   time.Time  `json:"created_at"`
         UpdatedAt   time.Time  `json:"updated_at"`
         TestSuite   *TestSuite `json:"test_suite,omitempty"`
+        TestSteps   []TestStep `json:"test_steps,omitempty"`
+}
+
+// TestStep represents an individual step in a test case
+type TestStep struct {
+        ID             int       `json:"id"`
+        TestCaseID     int       `json:"test_case_id"`
+        StepNumber     int       `json:"step_number"`
+        Description    string    `json:"description"`
+        ExpectedResult string    `json:"expected_result"`
+        CreatedAt      time.Time `json:"created_at"`
+        UpdatedAt      time.Time `json:"updated_at"`
 }
 
 // TestRun represents an execution of a test case
@@ -78,7 +90,31 @@ type CreateTestCaseRequest struct {
         Title       string `json:"title"`
         Description string `json:"description"`
         Priority    string `json:"priority"`
+        Status      string `json:"status"`
         TestSuiteID int    `json:"test_suite_id"`
+}
+
+// UpdateTestCaseRequest represents the request to update a test case
+type UpdateTestCaseRequest struct {
+        Title       string `json:"title"`
+        Description string `json:"description"`
+        Priority    string `json:"priority"`
+        Status      string `json:"status"`
+}
+
+// CreateTestStepRequest represents the request to create a new test step
+type CreateTestStepRequest struct {
+        TestCaseID     int    `json:"test_case_id"`
+        StepNumber     int    `json:"step_number"`
+        Description    string `json:"description"`
+        ExpectedResult string `json:"expected_result"`
+}
+
+// UpdateTestStepRequest represents the request to update a test step
+type UpdateTestStepRequest struct {
+        StepNumber     int    `json:"step_number"`
+        Description    string `json:"description"`
+        ExpectedResult string `json:"expected_result"`
 }
 
 // CreateTestRunRequest represents the request to create a new test run
