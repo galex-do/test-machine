@@ -1151,7 +1151,7 @@ function showCreateTestCaseModal() {
 }
 
 function showCreateTestStepModal() {
-    $('#testStepModal').modal('show');
+    // Reset form first, then set values for creation
     document.getElementById('testStepForm').reset();
     document.getElementById('testStepModalTitle').textContent = 'Add New Test Step';
     document.getElementById('testStepId').value = '';
@@ -1173,6 +1173,9 @@ function showCreateTestStepModal() {
         // Fallback to step number 1 if there's an error
         stepNumberField.value = 1;
     });
+    
+    // Show modal after setting values
+    $('#testStepModal').modal('show');
 }
 
 function showCreateTestRunModal() {
@@ -1334,41 +1337,59 @@ function handleTestStepForm() {
 function editTestStep(testStepId) {
     console.log('Editing test step with ID:', testStepId);
     
-    // Find the test step data in currently loaded steps or fetch it
+    // Force fresh fetch of test steps to avoid stale data
     API.getTestSteps(currentTestCase).then(testSteps => {
         console.log('Loaded test steps:', testSteps);
         const testStep = testSteps.find(step => step.id === testStepId);
         console.log('Found test step:', testStep);
         
-        if (testStep) {
-            // Show the modal first
+        // Validate test step was found
+        if (!testStep) {
+            console.error('Test step not found in response. Available IDs:', testSteps.map(s => s.id));
+            showAlert('Test step not found', 'danger');
+            return;
+        }
+            // Set form values BEFORE showing the modal to prevent any reset
+            console.log('Setting form values before showing modal...');
+            document.getElementById('testStepModalTitle').textContent = 'Edit Test Step';
+            document.getElementById('testStepId').value = testStep.id;
+            
+            // Make step number editable for editing and set value
+            const stepNumberField = document.getElementById('testStepNumber');
+            stepNumberField.removeAttribute('readonly');
+            stepNumberField.value = testStep.step_number;
+            
+            const descriptionField = document.getElementById('testStepDescription');
+            const expectedResultField = document.getElementById('testStepExpectedResult');
+            
+            descriptionField.value = testStep.description || '';
+            expectedResultField.value = testStep.expected_result || '';
+            
+            console.log('Form values set:', {
+                id: testStep.id,
+                step_number: testStep.step_number,
+                description: testStep.description,
+                expected_result: testStep.expected_result
+            });
+            
+            console.log('Field values after setting:', {
+                stepNumber: stepNumberField.value,
+                description: descriptionField.value,
+                expectedResult: expectedResultField.value
+            });
+            
+            // Show the modal after setting values
             $('#testStepModal').modal('show');
             
-            // Use a small delay to ensure modal is fully shown before setting values
+            // Additional safety check - set values again after modal is shown
             setTimeout(() => {
-                console.log('Setting form values...');
-                document.getElementById('testStepModalTitle').textContent = 'Edit Test Step';
-                document.getElementById('testStepId').value = testStep.id;
-                
-                // Make step number editable for editing
-                const stepNumberField = document.getElementById('testStepNumber');
-                stepNumberField.removeAttribute('readonly');
-                stepNumberField.value = testStep.step_number;
-                
-                document.getElementById('testStepDescription').value = testStep.description;
-                document.getElementById('testStepExpectedResult').value = testStep.expected_result;
-                
-                console.log('Form values set:', {
-                    id: testStep.id,
-                    step_number: testStep.step_number,
-                    description: testStep.description,
-                    expected_result: testStep.expected_result
-                });
-            }, 100);
-        } else {
-            console.error('Test step not found with ID:', testStepId);
-            showAlert('Test step not found', 'danger');
-        }
+                if (document.getElementById('testStepNumber').value !== testStep.step_number.toString()) {
+                    console.log('Re-setting form values after modal shown...');
+                    document.getElementById('testStepNumber').value = testStep.step_number;
+                    document.getElementById('testStepDescription').value = testStep.description || '';
+                    document.getElementById('testStepExpectedResult').value = testStep.expected_result || '';
+                }
+            }, 200);
     }).catch(error => {
         console.error('Error loading test step for editing:', error);
         showAlert('Error loading test step details', 'danger');
