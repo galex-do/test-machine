@@ -649,6 +649,13 @@ function renderTestCaseDetails(testCase, testSteps) {
 }
 
 function renderTestSteps(testSteps, container) {
+    if (!container) {
+        console.error('Container not provided for test steps');
+        return;
+    }
+    
+    console.log('Rendering test steps:', testSteps, 'in container:', container);
+    
     let html = '';
     testSteps.sort((a, b) => a.step_number - b.step_number);
     
@@ -681,7 +688,12 @@ function renderTestSteps(testSteps, container) {
         `;
     });
     
-    container.innerHTML = html;
+    try {
+        container.innerHTML = html;
+        console.log('Successfully rendered test steps');
+    } catch (error) {
+        console.error('Error setting innerHTML for test steps:', error);
+    }
 }
 
 function loadTestRunDetails(testRunId) {
