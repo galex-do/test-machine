@@ -60,6 +60,11 @@ function getPriorityBadgeClass(priority) {
     return priorityMap[priority] || 'priority-medium';
 }
 
+function truncateText(text, maxLength = 30) {
+    if (!text || text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+}
+
 // API functions
 const API = {
     // Projects
@@ -255,9 +260,11 @@ function renderProjectDetails(project, testSuites) {
     
     const projectNameEl = document.getElementById('project-name');
     const projectDescEl = document.getElementById('project-description');
+    const projectBreadcrumb = document.getElementById('project-breadcrumb');
     
     if (projectNameEl) projectNameEl.textContent = project.name;
     if (projectDescEl) projectDescEl.textContent = project.description || 'No description';
+    if (projectBreadcrumb) projectBreadcrumb.textContent = truncateText(project.name);
     
     // Try multiple ways to find the container
     let container = document.getElementById('test-suites-container');
@@ -371,10 +378,14 @@ function renderTestSuiteDetails(testSuite, testCases, testRuns) {
     const testSuiteNameEl = document.getElementById('test-suite-name');
     const testSuiteDescEl = document.getElementById('test-suite-description');
     const projectNameEl = document.getElementById('project-name');
+    const projectBreadcrumb = document.getElementById('project-breadcrumb');
+    const testSuiteBreadcrumb = document.getElementById('test-suite-breadcrumb');
     
     if (testSuiteNameEl) testSuiteNameEl.textContent = testSuite.name;
     if (testSuiteDescEl) testSuiteDescEl.textContent = testSuite.description || 'No description';
     if (projectNameEl) projectNameEl.textContent = testSuite.project.name;
+    if (projectBreadcrumb) projectBreadcrumb.textContent = truncateText(testSuite.project.name);
+    if (testSuiteBreadcrumb) testSuiteBreadcrumb.textContent = truncateText(testSuite.name);
     
     // Render test cases with fallback creation
     let casesContainer = document.getElementById('test-cases-container');
@@ -653,6 +664,13 @@ function renderTestCaseDetails(testCase, testSteps) {
         } else {
             console.log('project-name element not found');
         }
+        
+        // Update breadcrumbs with actual names
+        const projectBreadcrumb = document.getElementById('project-breadcrumb');
+        const testSuiteBreadcrumb = document.getElementById('test-suite-breadcrumb');
+        if (projectBreadcrumb) projectBreadcrumb.textContent = truncateText(testCase.test_suite.project.name);
+        if (testSuiteBreadcrumb) testSuiteBreadcrumb.textContent = truncateText(testCase.test_suite.name);
+        
         console.log('Finished setting basic info');
     } catch (error) {
         console.error('Error in renderTestCaseDetails:', error);
@@ -767,6 +785,12 @@ function renderTestRunDetails(testRun, testExecutions) {
     document.getElementById('test-run-status').innerHTML = `<span class="status-badge ${getStatusBadgeClass(testRun.status)}">${testRun.status}</span>`;
     document.getElementById('test-suite-name').textContent = testRun.test_suite.name;
     document.getElementById('project-name').textContent = testRun.test_suite.project.name;
+    
+    // Update breadcrumbs with actual names
+    const projectBreadcrumb = document.getElementById('project-breadcrumb');
+    const testSuiteBreadcrumb = document.getElementById('test-suite-breadcrumb');
+    if (projectBreadcrumb) projectBreadcrumb.textContent = truncateText(testRun.test_suite.project.name);
+    if (testSuiteBreadcrumb) testSuiteBreadcrumb.textContent = truncateText(testRun.test_suite.name);
     document.getElementById('started-at').textContent = formatDate(testRun.started_at);
     document.getElementById('completed-at').textContent = formatDate(testRun.completed_at);
     

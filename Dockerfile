@@ -27,14 +27,15 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates netcat-openbsd
 
 # Set working directory
-WORKDIR /root/
+WORKDIR /app
 
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
 
-# Copy static files and templates
+# Copy static files, templates, and migrations
 COPY static/ ./static/
 COPY templates/ ./templates/
+COPY migrations/ ./migrations/
 
 # Expose port 5000
 EXPOSE 5000
