@@ -34,7 +34,8 @@ func main() {
                 log.Fatal("Failed to set goose dialect:", err)
         }
         
-        if err := goose.Up(db, "migrations"); err != nil {
+        // Run migrations from the migrations directory
+        if err := goose.Up(db, "./migrations"); err != nil {
                 log.Fatal("Failed to run database migrations:", err)
         }
         log.Println("Database migrations completed successfully")
