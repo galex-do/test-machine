@@ -590,54 +590,73 @@ function loadTestCaseDetails(testCaseId) {
 }
 
 function renderTestCaseDetails(testCase, testSteps) {
-    console.log('Rendering test case details:', testCase, testSteps);
-    
-    // Update basic information with null checks
-    const titleEl = document.getElementById('test-case-title');
-    const descEl = document.getElementById('test-case-description');
-    const priorityEl = document.getElementById('test-case-priority');
-    const statusEl = document.getElementById('test-case-status');
-    const testSuiteNameEl = document.getElementById('test-suite-name');
-    const projectNameEl = document.getElementById('project-name');
+    console.log('Starting renderTestCaseDetails:', testCase, testSteps);
     
     try {
+        // Update basic information with null checks
+        console.log('Getting DOM elements...');
+        const titleEl = document.getElementById('test-case-title');
+        const descEl = document.getElementById('test-case-description');
+        const priorityEl = document.getElementById('test-case-priority');
+        const statusEl = document.getElementById('test-case-status');
+        const testSuiteNameEl = document.getElementById('test-suite-name');
+        const projectNameEl = document.getElementById('project-name');
+        
+        console.log('Found elements:', {
+            titleEl: !!titleEl,
+            descEl: !!descEl,
+            priorityEl: !!priorityEl,
+            statusEl: !!statusEl,
+            testSuiteNameEl: !!testSuiteNameEl,
+            projectNameEl: !!projectNameEl
+        });
+        
+        console.log('Setting element values...');
         if (titleEl) {
             titleEl.textContent = testCase.title;
+            console.log('Set title:', testCase.title);
         } else {
             console.log('test-case-title element not found');
         }
         
         if (descEl) {
             descEl.textContent = testCase.description || 'No description';
+            console.log('Set description');
         } else {
             console.log('test-case-description element not found');
         }
         
         if (priorityEl) {
             priorityEl.innerHTML = `<span class="status-badge ${getPriorityBadgeClass(testCase.priority)}">${testCase.priority}</span>`;
+            console.log('Set priority');
         } else {
             console.log('test-case-priority element not found');
         }
         
         if (statusEl) {
             statusEl.innerHTML = `<span class="status-badge ${getStatusBadgeClass(testCase.status)}">${testCase.status}</span>`;
+            console.log('Set status');
         } else {
             console.log('test-case-status element not found');
         }
         
         if (testSuiteNameEl) {
             testSuiteNameEl.textContent = testCase.test_suite.name;
+            console.log('Set test suite name');
         } else {
             console.log('test-suite-name element not found');
         }
         
         if (projectNameEl) {
             projectNameEl.textContent = testCase.test_suite.project.name;
+            console.log('Set project name');
         } else {
             console.log('project-name element not found');
         }
+        console.log('Finished setting basic info');
     } catch (error) {
-        console.error('Error updating test case basic info:', error);
+        console.error('Error in renderTestCaseDetails:', error);
+        console.error('Error stack:', error.stack);
     }
     
     // Render test steps with fallback creation
