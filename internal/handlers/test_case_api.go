@@ -76,7 +76,7 @@ func (h *Handler) getAllTestCases(w http.ResponseWriter, r *http.Request) {
                 return
         }
 
-        h.writeJSONResponse(w, testCases, http.StatusOK)
+        h.writeJSONResponse(w, testCases)
 }
 
 func (h *Handler) getTestCase(w http.ResponseWriter, r *http.Request, id int) {
@@ -91,7 +91,7 @@ func (h *Handler) getTestCase(w http.ResponseWriter, r *http.Request, id int) {
                 return
         }
 
-        h.writeJSONResponse(w, testCase, http.StatusOK)
+        h.writeJSONResponse(w, testCase)
 }
 
 func (h *Handler) createTestCase(w http.ResponseWriter, r *http.Request) {
@@ -107,7 +107,7 @@ func (h *Handler) createTestCase(w http.ResponseWriter, r *http.Request) {
                 return
         }
 
-        h.writeJSONResponse(w, testCase, http.StatusCreated)
+        h.writeJSONResponse(w, testCase)
 }
 
 // handleTestSteps handles test steps requests for a specific test case
@@ -129,7 +129,7 @@ func (h *Handler) getTestSteps(w http.ResponseWriter, r *http.Request, testCaseI
                 return
         }
         
-        h.writeJSONResponse(w, testSteps, http.StatusOK)
+        h.writeJSONResponse(w, testSteps)
 }
 
 func (h *Handler) createTestStep(w http.ResponseWriter, r *http.Request, testCaseID int) {
@@ -147,7 +147,7 @@ func (h *Handler) createTestStep(w http.ResponseWriter, r *http.Request, testCas
                 return
         }
         
-        h.writeJSONResponse(w, testStep, http.StatusCreated)
+        h.writeJSONResponse(w, testStep)
 }
 
 func (h *Handler) updateTestCase(w http.ResponseWriter, r *http.Request, id int) {

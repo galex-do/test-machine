@@ -2,12 +2,7 @@ package handlers
 
 import (
         "encoding/json"
-        "html/template"
-        "log"
         "net/http"
-        "path/filepath"
-        "strconv"
-        "strings"
 
         "github.com/galex-do/test-machine/internal/service"
 )
@@ -31,18 +26,10 @@ func NewHandler(projectService *service.ProjectService, testSuiteService *servic
 }
 
 // SetupRoutes sets up all the routes
-func (h *Handler) SetupRoutes() *http.ServeMux {
+func (h *Handler) SetupRoutes() http.Handler {
         mux := http.NewServeMux()
 
-        // Serve static files
-        mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-
-        // Frontend routes
-        mux.HandleFunc("/", h.indexHandler)
-        mux.HandleFunc("/project/", h.projectHandler)
-        mux.HandleFunc("/reports", h.reportsHandler)
-
-        // API routes
+        // API routes only
         mux.HandleFunc("/api/projects", h.projectsAPIHandler)
         mux.HandleFunc("/api/projects/", h.projectAPIHandler)
         mux.HandleFunc("/api/test-suites", h.testSuitesAPIHandler)
@@ -51,18 +38,28 @@ func (h *Handler) SetupRoutes() *http.ServeMux {
         mux.HandleFunc("/api/test-cases/", h.testCaseAPIHandler)
         mux.HandleFunc("/api/test-runs", h.testRunsAPIHandler)
         mux.HandleFunc("/api/test-runs/", h.testRunAPIHandler)
+        mux.HandleFunc("/api/stats", h.statsAPIHandler)
 
-        return mux
+        // Add CORS middleware
+        return h.corsMiddleware(mux)
 }
 
-// parseTemplates parses HTML templates
-func (h *Handler) parseTemplates(templateName string) *template.Template {
-        tmpl, err := template.ParseFiles(filepath.Join("templates", templateName))
-        if err != nil {
-                log.Printf("Error parsing template %s: %v", templateName, err)
-                return nil
-        }
-        return tmpl
+// corsMiddleware adds CORS headers for frontend integration
+func (h *Handler) corsMiddleware(next *http.ServeMux) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                // Set CORS headers
+                w.Header().Set("Access-Control-Allow-Origin", "*")
+                w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+                w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+                // Handle preflight requests
+                if r.Method == "OPTIONS" {
+                        w.WriteHeader(http.StatusOK)
+                        return
+                }
+
+                next.ServeHTTP(w, r)
+        })
 }
 
 // writeJSONError writes a JSON error response
@@ -73,125 +70,50 @@ func (h *Handler) writeJSONError(w http.ResponseWriter, message string, statusCo
 }
 
 // writeJSONResponse writes a JSON response
-func (h *Handler) writeJSONResponse(w http.ResponseWriter, data interface{}, statusCode int) {
+func (h *Handler) writeJSONResponse(w http.ResponseWriter, data interface{}) {
         w.Header().Set("Content-Type", "application/json")
-        w.WriteHeader(statusCode)
+        w.WriteHeader(http.StatusOK)
         json.NewEncoder(w).Encode(data)
 }
 
-// Frontend handlers
-func (h *Handler) indexHandler(w http.ResponseWriter, r *http.Request) {
-        tmpl := h.parseTemplates("index.html")
-        if tmpl == nil {
-                http.Error(w, "Template error", http.StatusInternalServerError)
+// statsAPIHandler handles /api/stats requests
+func (h *Handler) statsAPIHandler(w http.ResponseWriter, r *http.Request) {
+        if r.Method != "GET" {
+                h.writeJSONError(w, "Method not allowed", http.StatusMethodNotAllowed)
                 return
         }
 
-        data := map[string]interface{}{
-                "title": "Dashboard",
-        }
-        tmpl.Execute(w, data)
-}
-
-func (h *Handler) projectHandler(w http.ResponseWriter, r *http.Request) {
-        path := strings.TrimPrefix(r.URL.Path, "/project/")
-        parts := strings.Split(path, "/")
-        
-        if len(parts) == 0 || parts[0] == "" {
-                http.Error(w, "Invalid project URL", http.StatusBadRequest)
-                return
-        }
-        
-        projectID, err := strconv.Atoi(parts[0])
+        // Get all entities to calculate stats
+        projects, err := h.projectService.GetAll()
         if err != nil {
-                http.Error(w, "Invalid project ID", http.StatusBadRequest)
-                return
-        }
-        
-        // Handle different hierarchical routes
-        if len(parts) == 1 {
-                // /project/{id} - Project details
-                h.renderProjectDetails(w, projectID)
-        } else if len(parts) >= 3 && parts[1] == "test-suite" {
-                // /project/{pid}/test-suite/{sid} - Test suite details
-                testSuiteID, err := strconv.Atoi(parts[2])
-                if err != nil {
-                        http.Error(w, "Invalid test suite ID", http.StatusBadRequest)
-                        return
-                }
-                
-                if len(parts) >= 5 && parts[3] == "test-case" {
-                        // /project/{pid}/test-suite/{sid}/test-case/{cid} - Test case details
-                        testCaseID, err := strconv.Atoi(parts[4])
-                        if err != nil {
-                                http.Error(w, "Invalid test case ID", http.StatusBadRequest)
-                                return
-                        }
-                        h.renderTestCaseDetails(w, projectID, testSuiteID, testCaseID)
-                } else {
-                        h.renderTestSuiteDetails(w, projectID, testSuiteID)
-                }
-        } else {
-                http.Error(w, "Invalid URL path", http.StatusBadRequest)
-        }
-}
-
-func (h *Handler) renderProjectDetails(w http.ResponseWriter, projectID int) {
-        tmpl := h.parseTemplates("project.html")
-        if tmpl == nil {
-                http.Error(w, "Template error", http.StatusInternalServerError)
+                h.writeJSONError(w, "Error fetching projects", http.StatusInternalServerError)
                 return
         }
 
-        data := map[string]interface{}{
-                "title":     "Project Details",
-                "projectID": projectID,
-        }
-        tmpl.Execute(w, data)
-}
-
-func (h *Handler) renderTestSuiteDetails(w http.ResponseWriter, projectID, testSuiteID int) {
-        tmpl := h.parseTemplates("test-suite.html")
-        if tmpl == nil {
-                http.Error(w, "Template error", http.StatusInternalServerError)
+        testSuites, err := h.testSuiteService.GetAll(nil)
+        if err != nil {
+                h.writeJSONError(w, "Error fetching test suites", http.StatusInternalServerError)
                 return
         }
 
-        data := map[string]interface{}{
-                "title":       "Test Suite Details",
-                "projectID":   projectID,
-                "testSuiteID": testSuiteID,
-        }
-        tmpl.Execute(w, data)
-}
-
-func (h *Handler) renderTestCaseDetails(w http.ResponseWriter, projectID, testSuiteID, testCaseID int) {
-        tmpl := h.parseTemplates("test-case.html")
-        if tmpl == nil {
-                http.Error(w, "Template error", http.StatusInternalServerError)
+        testCases, err := h.testCaseService.GetAll(nil)
+        if err != nil {
+                h.writeJSONError(w, "Error fetching test cases", http.StatusInternalServerError)
                 return
         }
 
-        data := map[string]interface{}{
-                "title":       "Test Case Details",
-                "projectID":   projectID,
-                "testSuiteID": testSuiteID,
-                "testCaseID":  testCaseID,
-        }
-        tmpl.Execute(w, data)
-}
-
-
-
-func (h *Handler) reportsHandler(w http.ResponseWriter, r *http.Request) {
-        tmpl := h.parseTemplates("reports.html")
-        if tmpl == nil {
-                http.Error(w, "Template error", http.StatusInternalServerError)
+        testRuns, err := h.testRunService.GetAll(nil)
+        if err != nil {
+                h.writeJSONError(w, "Error fetching test runs", http.StatusInternalServerError)
                 return
         }
 
-        data := map[string]interface{}{
-                "title": "Reports",
+        stats := map[string]interface{}{
+                "totalProjects":   len(projects),
+                "totalTestSuites": len(testSuites),
+                "totalTestCases":  len(testCases),
+                "totalTestRuns":   len(testRuns),
         }
-        tmpl.Execute(w, data)
+
+        h.writeJSONResponse(w, stats)
 }

@@ -33,16 +33,17 @@ services:
     profiles:
       - migration
 
-  # Test Management Application
-  app:
+  # Go Backend API
+  backend:
     build: .
     ports:
-      - "5000:5000"
+      - "8080:8080"
     volumes:
       - ./migrations:/app/migrations
     environment:
       DATABASE_URL: postgres://${DATABASE_USER:-postgres}:${DATABASE_PASSWORD:-postgres}@${DATABASE_HOST:-postgres}:5432/${DATABASE_DB:-test}?sslmode=disable
       DATABASE_NAME: ${DATABASE_DB:-test}
+      PORT: 8080
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,3 +58,16 @@ services:
         echo 'PostgreSQL is ready!'
         ./main
       "
+
+  # Vue.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080/api

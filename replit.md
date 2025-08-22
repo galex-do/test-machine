@@ -3,6 +3,15 @@
 This is a Test Management Platform built as a web application for organizing and tracking software testing activities. The platform provides functionality for managing test projects, test suites, test cases, and test runs with a comprehensive dashboard and reporting system. It is designed for QA teams and software testers to organize their testing workflows and track test execution results.
 
 ## Recent Changes (August 2025)
+- **FRONTEND/BACKEND SEPARATION** (August 22, 2025): Completed major architectural refactoring
+- Separated monolithic application into independent frontend and backend modules
+- Created complete Vue.js frontend in frontend/ directory with Vite build system
+- Refactored Go backend to API-only architecture (port 8080) with CORS support
+- Updated Docker containerization for separate frontend and backend services
+- Frontend uses Nginx for production deployment (port 5000 via nginx proxy)
+- Backend now serves only JSON API endpoints under /api/* routes
+- Removed template rendering and static file serving from Go backend
+- Added comprehensive API client service for frontend-backend communication
 - Built working Go implementation using standard library (simple_main.go)
 - **MAJOR REFACTOR**: Migrated from in-memory storage to PostgreSQL database
 - Added PostgreSQL driver (lib/pq) and full database integration
@@ -58,7 +67,33 @@ Preferred communication style: Simple, everyday language.
 
 ## Frontend Architecture
 
-The frontend follows a traditional server-side rendered architecture using HTML templates with Go's template engine. The application uses a multi-page application (MPA) approach rather than a single-page application (SPA).
+**MODERN FRONTEND STACK**: The frontend has been completely rewritten as a modern Vue.js single-page application (SPA) with the following architecture:
+
+**Vue.js Framework Structure:**
+- Vue 3 with Composition API for reactive components
+- Vite for fast development and optimized production builds  
+- Modern ES6+ JavaScript with Vue SFC (Single File Components)
+- Bootstrap 5 integrated for responsive UI components
+- Font Awesome for consistent iconography
+- Axios for HTTP API communication with the Go backend
+
+**Component Architecture:**
+- Dashboard.vue - Main overview page with real-time statistics
+- ProjectDetail.vue - Project management interface
+- TestSuiteDetail.vue - Test suite organization
+- TestCaseDetail.vue - Individual test case management with test steps
+- Reports.vue - Analytics and reporting dashboard
+- Modals for CRUD operations (CreateProject, EditProject, etc.)
+
+**API Service Layer:**
+- api.js - Centralized HTTP client for all backend communication
+- Handles authentication, error handling, and response formatting
+- Base URL configuration for different environments
+
+**Development and Production:**
+- Development server: Vite dev server on port 3000
+- Production deployment: Nginx serving static assets on port 5000
+- Nginx proxy configuration for /api/* requests to Go backend
 
 **Template Structure:**
 - Consistent layout across all pages with shared navigation and sidebar

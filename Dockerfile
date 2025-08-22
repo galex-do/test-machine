@@ -32,13 +32,11 @@ WORKDIR /app
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
 
-# Copy static files, templates, and migrations
-COPY static/ ./static/
-COPY templates/ ./templates/
+# Copy migrations only (API-only backend)
 COPY migrations/ ./migrations/
 
-# Expose port 5000
-EXPOSE 5000
+# Expose port 8080
+EXPOSE 8080
 
 # Command to run the application
 CMD ["./main"]
