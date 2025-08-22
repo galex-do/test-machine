@@ -302,9 +302,6 @@ function renderTestSuitesInContainer(container, testSuites) {
                 <i class="fas fa-tasks"></i>
                 <h5>No Test Suites Found</h5>
                 <p>Create your first test suite to organize test cases.</p>
-                <button class="btn btn-primary" onclick="showCreateTestSuiteModal()">
-                    <i class="fas fa-plus"></i> Create Test Suite
-                </button>
             </div>
         `;
         return;
@@ -397,11 +394,8 @@ function renderTestSuiteDetails(testSuite, testCases, testRuns) {
             const section = document.createElement('div');
             section.className = 'mb-4';
             section.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="mb-3">
                     <h3>Test Cases</h3>
-                    <button class="btn btn-primary" onclick="showCreateTestCaseModal()">
-                        <i class="fas fa-plus"></i> Create Test Case
-                    </button>
                 </div>
                 <div id="test-cases-container"></div>
             `;
@@ -420,9 +414,6 @@ function renderTestSuiteDetails(testSuite, testCases, testRuns) {
                 <i class="fas fa-clipboard-list"></i>
                 <h5>No Test Cases Found</h5>
                 <p>Create your first test case to start testing.</p>
-                <button class="btn btn-primary" onclick="showCreateTestCaseModal()">
-                    <i class="fas fa-plus"></i> Create Test Case
-                </button>
             </div>
         `;
     }
@@ -437,11 +428,8 @@ function renderTestSuiteDetails(testSuite, testCases, testRuns) {
             const section = document.createElement('div');
             section.className = 'mb-4';
             section.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="mb-3">
                     <h3>Test Runs</h3>
-                    <button class="btn btn-success" onclick="showCreateTestRunModal()">
-                        <i class="fas fa-play"></i> Start Test Run
-                    </button>
                 </div>
                 <div id="test-runs-container"></div>
             `;
@@ -459,9 +447,6 @@ function renderTestSuiteDetails(testSuite, testCases, testRuns) {
                 <i class="fas fa-play-circle"></i>
                 <h5>No Test Runs Found</h5>
                 <p>Execute your first test run to track progress.</p>
-                <button class="btn btn-success" onclick="showCreateTestRunModal()">
-                    <i class="fas fa-play"></i> Start Test Run
-                </button>
             </div>
         `;
     }
@@ -689,11 +674,8 @@ function renderTestCaseDetails(testCase, testSteps) {
             const section = document.createElement('div');
             section.className = 'mb-4';
             section.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="mb-3">
                     <h3>Test Steps</h3>
-                    <button class="btn btn-primary" onclick="showCreateTestStepModal()">
-                        <i class="fas fa-plus"></i> Add Test Step
-                    </button>
                 </div>
                 <div id="test-steps-container"></div>
             `;
@@ -710,9 +692,6 @@ function renderTestCaseDetails(testCase, testSteps) {
                     <i class="fas fa-list-ol"></i>
                     <h5>No Test Steps Found</h5>
                     <p>Add test steps to define the testing procedure.</p>
-                    <button class="btn btn-primary" onclick="showCreateTestStepModal()">
-                        <i class="fas fa-plus"></i> Add Test Step
-                    </button>
                 </div>
             `;
         } else {
