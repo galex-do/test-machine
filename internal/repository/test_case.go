@@ -25,10 +25,16 @@ func (r *TestCaseRepository) GetAll(testSuiteID *int) ([]models.TestCase, error)
                 query = `
                         SELECT tc.id, tc.title, tc.description, tc.priority, tc.status, tc.test_suite_id, tc.created_at, tc.updated_at,
                                ts.id, ts.name, ts.description, ts.project_id, ts.created_at, ts.updated_at,
-                               p.id, p.name, p.description, p.created_at, p.updated_at
+                               p.id, p.name, p.description, p.created_at, p.updated_at,
+                               COALESCE(step_counts.step_count, 0) as test_steps_count
                         FROM test_cases tc
                         JOIN test_suites ts ON tc.test_suite_id = ts.id
                         JOIN projects p ON ts.project_id = p.id
+                        LEFT JOIN (
+                                SELECT test_case_id, COUNT(*) as step_count
+                                FROM test_steps
+                                GROUP BY test_case_id
+                        ) step_counts ON tc.id = step_counts.test_case_id
                         WHERE tc.test_suite_id = $1
                         ORDER BY tc.created_at DESC
                 `
@@ -37,10 +43,16 @@ func (r *TestCaseRepository) GetAll(testSuiteID *int) ([]models.TestCase, error)
                 query = `
                         SELECT tc.id, tc.title, tc.description, tc.priority, tc.status, tc.test_suite_id, tc.created_at, tc.updated_at,
                                ts.id, ts.name, ts.description, ts.project_id, ts.created_at, ts.updated_at,
-                               p.id, p.name, p.description, p.created_at, p.updated_at
+                               p.id, p.name, p.description, p.created_at, p.updated_at,
+                               COALESCE(step_counts.step_count, 0) as test_steps_count
                         FROM test_cases tc
                         JOIN test_suites ts ON tc.test_suite_id = ts.id
                         JOIN projects p ON ts.project_id = p.id
+                        LEFT JOIN (
+                                SELECT test_case_id, COUNT(*) as step_count
+                                FROM test_steps
+                                GROUP BY test_case_id
+                        ) step_counts ON tc.id = step_counts.test_case_id
                         ORDER BY tc.created_at DESC
                 `
         }
@@ -60,6 +72,7 @@ func (r *TestCaseRepository) GetAll(testSuiteID *int) ([]models.TestCase, error)
                         &tc.ID, &tc.Title, &tc.Description, &tc.Priority, &tc.Status, &tc.TestSuiteID, &tc.CreatedAt, &tc.UpdatedAt,
                         &ts.ID, &ts.Name, &ts.Description, &ts.ProjectID, &ts.CreatedAt, &ts.UpdatedAt,
                         &p.ID, &p.Name, &p.Description, &p.CreatedAt, &p.UpdatedAt,
+                        &tc.TestStepsCount,
                 )
                 if err != nil {
                         return nil, err

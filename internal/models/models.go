@@ -26,16 +26,17 @@ type TestSuite struct {
 
 // TestCase represents an individual test case
 type TestCase struct {
-        ID          int        `json:"id"`
-        Title       string     `json:"title"`
-        Description string     `json:"description"`
-        Priority    string     `json:"priority"`
-        Status      string     `json:"status"`
-        TestSuiteID int        `json:"test_suite_id"`
-        CreatedAt   time.Time  `json:"created_at"`
-        UpdatedAt   time.Time  `json:"updated_at"`
-        TestSuite   *TestSuite `json:"test_suite,omitempty"`
-        TestSteps   []TestStep `json:"test_steps,omitempty"`
+        ID            int        `json:"id"`
+        Title         string     `json:"title"`
+        Description   string     `json:"description"`
+        Priority      string     `json:"priority"`
+        Status        string     `json:"status"`
+        TestSuiteID   int        `json:"test_suite_id"`
+        CreatedAt     time.Time  `json:"created_at"`
+        UpdatedAt     time.Time  `json:"updated_at"`
+        TestSuite     *TestSuite `json:"test_suite,omitempty"`
+        TestSteps     []TestStep `json:"test_steps,omitempty"`
+        TestStepsCount int       `json:"test_steps_count,omitempty"`
 }
 
 // TestStep represents an individual step in a test case

@@ -474,7 +474,7 @@ function renderTestCasesTable(testCases, container) {
     `;
     
     testCases.forEach(testCase => {
-        const stepsCount = testCase.test_steps ? testCase.test_steps.length : 0;
+        const stepsCount = testCase.test_steps_count || 0;
         html += `
             <tr>
                 <td>
