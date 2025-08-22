@@ -563,6 +563,13 @@ function renderTestRunsTable(testRuns, container) {
 
 function loadTestCaseDetails(testCaseId) {
     currentTestCase = testCaseId;
+    
+    // Ensure DOM is ready before proceeding
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => loadTestCaseDetails(testCaseId));
+        return;
+    }
+    
     showLoading('test-case-details');
     
     Promise.all([
@@ -570,32 +577,74 @@ function loadTestCaseDetails(testCaseId) {
         API.getTestSteps(testCaseId)
     ]).then(([testCase, testSteps]) => {
         hideLoading();
-        renderTestCaseDetails(testCase, testSteps);
+        
+        // Use setTimeout to ensure DOM elements are available
+        setTimeout(() => {
+            renderTestCaseDetails(testCase, testSteps);
+        }, 100);
+    }).catch(error => {
+        hideLoading();
+        console.error('Error loading test case details:', error);
+        showAlert('Error loading test case details', 'danger');
     });
 }
 
 function renderTestCaseDetails(testCase, testSteps) {
-    document.getElementById('test-case-title').textContent = testCase.title;
-    document.getElementById('test-case-description').textContent = testCase.description || 'No description';
-    document.getElementById('test-case-priority').innerHTML = `<span class="status-badge ${getPriorityBadgeClass(testCase.priority)}">${testCase.priority}</span>`;
-    document.getElementById('test-case-status').innerHTML = `<span class="status-badge ${getStatusBadgeClass(testCase.status)}">${testCase.status}</span>`;
-    document.getElementById('test-suite-name').textContent = testCase.test_suite.name;
-    document.getElementById('project-name').textContent = testCase.test_suite.project.name;
+    console.log('Rendering test case details:', testCase, testSteps);
     
-    const stepsContainer = document.getElementById('test-steps-container');
-    if (!testSteps || testSteps.length === 0) {
-        stepsContainer.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-list-ol"></i>
-                <h5>No Test Steps Found</h5>
-                <p>Add test steps to define the testing procedure.</p>
-                <button class="btn btn-primary" onclick="showCreateTestStepModal()">
-                    <i class="fas fa-plus"></i> Add Test Step
-                </button>
-            </div>
-        `;
-    } else {
-        renderTestSteps(testSteps, stepsContainer);
+    // Update basic information with null checks
+    const titleEl = document.getElementById('test-case-title');
+    const descEl = document.getElementById('test-case-description');
+    const priorityEl = document.getElementById('test-case-priority');
+    const statusEl = document.getElementById('test-case-status');
+    const testSuiteNameEl = document.getElementById('test-suite-name');
+    const projectNameEl = document.getElementById('project-name');
+    
+    if (titleEl) titleEl.textContent = testCase.title;
+    if (descEl) descEl.textContent = testCase.description || 'No description';
+    if (priorityEl) priorityEl.innerHTML = `<span class="status-badge ${getPriorityBadgeClass(testCase.priority)}">${testCase.priority}</span>`;
+    if (statusEl) statusEl.innerHTML = `<span class="status-badge ${getStatusBadgeClass(testCase.status)}">${testCase.status}</span>`;
+    if (testSuiteNameEl) testSuiteNameEl.textContent = testCase.test_suite.name;
+    if (projectNameEl) projectNameEl.textContent = testCase.test_suite.project.name;
+    
+    // Render test steps with fallback creation
+    let stepsContainer = document.getElementById('test-steps-container');
+    if (!stepsContainer) {
+        console.log('test-steps-container not found, creating fallback');
+        const mainContent = document.querySelector('main');
+        if (mainContent) {
+            const section = document.createElement('div');
+            section.className = 'mb-4';
+            section.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>Test Steps</h3>
+                    <button class="btn btn-primary" onclick="showCreateTestStepModal()">
+                        <i class="fas fa-plus"></i> Add Test Step
+                    </button>
+                </div>
+                <div id="test-steps-container"></div>
+            `;
+            mainContent.appendChild(section);
+            stepsContainer = document.getElementById('test-steps-container');
+            console.log('Created test-steps-container element');
+        }
+    }
+    
+    if (stepsContainer) {
+        if (!testSteps || testSteps.length === 0) {
+            stepsContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-list-ol"></i>
+                    <h5>No Test Steps Found</h5>
+                    <p>Add test steps to define the testing procedure.</p>
+                    <button class="btn btn-primary" onclick="showCreateTestStepModal()">
+                        <i class="fas fa-plus"></i> Add Test Step
+                    </button>
+                </div>
+            `;
+        } else {
+            renderTestSteps(testSteps, stepsContainer);
+        }
     }
 }
 
@@ -1164,6 +1213,8 @@ function handleTestCaseForm() {
 }
 
 function handleTestStepForm() {
+    event.preventDefault();
+    
     const form = document.getElementById('testStepForm');
     const formData = new FormData(form);
     const data = {
@@ -1180,11 +1231,48 @@ function handleTestStepForm() {
     
     apiCall.then(() => {
         $('#testStepModal').modal('hide');
-        showAlert(testStepId ? 'Test step updated successfully' : 'Test step created successfully');
-        if (typeof loadTestCaseDetails === 'function' && currentTestCase) loadTestCaseDetails(currentTestCase);
+        showAlert(testStepId ? 'Test step updated successfully' : 'Test step created successfully', 'success');
+        if (typeof loadTestCaseDetails === 'function' && currentTestCase) {
+            loadTestCaseDetails(currentTestCase);
+        }
+    }).catch(error => {
+        console.error('Error saving test step:', error);
+        showAlert('Error saving test step', 'danger');
     });
     
     return false;
+}
+
+function editTestStep(testStepId) {
+    // Find the test step data in currently loaded steps or fetch it
+    API.getTestSteps(currentTestCase).then(testSteps => {
+        const testStep = testSteps.find(step => step.id === testStepId);
+        if (testStep) {
+            document.getElementById('testStepModalTitle').textContent = 'Edit Test Step';
+            document.getElementById('testStepId').value = testStep.id;
+            document.getElementById('testStepNumber').value = testStep.step_number;
+            document.getElementById('testStepDescription').value = testStep.description;
+            document.getElementById('testStepExpectedResult').value = testStep.expected_result;
+            $('#testStepModal').modal('show');
+        }
+    }).catch(error => {
+        console.error('Error loading test step for editing:', error);
+        showAlert('Error loading test step details', 'danger');
+    });
+}
+
+function deleteTestStep(testStepId) {
+    if (confirm('Are you sure you want to delete this test step?')) {
+        API.deleteTestStep(testStepId).then(() => {
+            showAlert('Test step deleted successfully', 'success');
+            if (currentTestCase) {
+                loadTestCaseDetails(currentTestCase);
+            }
+        }).catch(error => {
+            console.error('Error deleting test step:', error);
+            showAlert('Error deleting test step', 'danger');
+        });
+    }
 }
 
 function handleTestRunForm() {
