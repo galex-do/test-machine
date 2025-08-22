@@ -600,12 +600,45 @@ function renderTestCaseDetails(testCase, testSteps) {
     const testSuiteNameEl = document.getElementById('test-suite-name');
     const projectNameEl = document.getElementById('project-name');
     
-    if (titleEl) titleEl.textContent = testCase.title;
-    if (descEl) descEl.textContent = testCase.description || 'No description';
-    if (priorityEl) priorityEl.innerHTML = `<span class="status-badge ${getPriorityBadgeClass(testCase.priority)}">${testCase.priority}</span>`;
-    if (statusEl) statusEl.innerHTML = `<span class="status-badge ${getStatusBadgeClass(testCase.status)}">${testCase.status}</span>`;
-    if (testSuiteNameEl) testSuiteNameEl.textContent = testCase.test_suite.name;
-    if (projectNameEl) projectNameEl.textContent = testCase.test_suite.project.name;
+    try {
+        if (titleEl) {
+            titleEl.textContent = testCase.title;
+        } else {
+            console.log('test-case-title element not found');
+        }
+        
+        if (descEl) {
+            descEl.textContent = testCase.description || 'No description';
+        } else {
+            console.log('test-case-description element not found');
+        }
+        
+        if (priorityEl) {
+            priorityEl.innerHTML = `<span class="status-badge ${getPriorityBadgeClass(testCase.priority)}">${testCase.priority}</span>`;
+        } else {
+            console.log('test-case-priority element not found');
+        }
+        
+        if (statusEl) {
+            statusEl.innerHTML = `<span class="status-badge ${getStatusBadgeClass(testCase.status)}">${testCase.status}</span>`;
+        } else {
+            console.log('test-case-status element not found');
+        }
+        
+        if (testSuiteNameEl) {
+            testSuiteNameEl.textContent = testCase.test_suite.name;
+        } else {
+            console.log('test-suite-name element not found');
+        }
+        
+        if (projectNameEl) {
+            projectNameEl.textContent = testCase.test_suite.project.name;
+        } else {
+            console.log('project-name element not found');
+        }
+    } catch (error) {
+        console.error('Error updating test case basic info:', error);
+    }
     
     // Render test steps with fallback creation
     let stepsContainer = document.getElementById('test-steps-container');
