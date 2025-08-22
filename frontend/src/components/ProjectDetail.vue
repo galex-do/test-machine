@@ -138,6 +138,9 @@ export default {
   },
   computed: {
     totalTestCases() {
+      if (!this.testSuites || !Array.isArray(this.testSuites)) {
+        return 0
+      }
       return this.testSuites.reduce((total, suite) => total + (suite.test_cases_count || 0), 0)
     }
   },
@@ -162,9 +165,10 @@ export default {
           api.getTestSuites(this.id)
         ])
         this.project = projectData
-        this.testSuites = testSuitesData
+        this.testSuites = Array.isArray(testSuitesData) ? testSuitesData : []
       } catch (error) {
         showAlert('Error loading project data: ' + error.message, 'danger')
+        this.testSuites = [] // Ensure testSuites is always an array
       } finally {
         this.loading = false
       }
