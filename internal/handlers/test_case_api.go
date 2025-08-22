@@ -123,9 +123,13 @@ func (h *Handler) handleTestSteps(w http.ResponseWriter, r *http.Request, testCa
 }
 
 func (h *Handler) getTestSteps(w http.ResponseWriter, r *http.Request, testCaseID int) {
-        // For now, return empty array since we don't have test steps implementation
-        // This will prevent the 400 error
-        h.writeJSONResponse(w, []models.TestStep{}, http.StatusOK)
+        testSteps, err := h.testCaseService.GetTestSteps(testCaseID)
+        if err != nil {
+                h.writeJSONError(w, "Database error", http.StatusInternalServerError)
+                return
+        }
+        
+        h.writeJSONResponse(w, testSteps, http.StatusOK)
 }
 
 func (h *Handler) createTestStep(w http.ResponseWriter, r *http.Request, testCaseID int) {
@@ -137,13 +141,10 @@ func (h *Handler) createTestStep(w http.ResponseWriter, r *http.Request, testCas
         
         req.TestCaseID = testCaseID
         
-        // For now, return a mock response since we don't have test steps implementation
-        testStep := models.TestStep{
-                ID:             1,
-                TestCaseID:     testCaseID,
-                StepNumber:     req.StepNumber,
-                Description:    req.Description,
-                ExpectedResult: req.ExpectedResult,
+        testStep, err := h.testCaseService.CreateTestStep(&req)
+        if err != nil {
+                h.writeJSONError(w, err.Error(), http.StatusBadRequest)
+                return
         }
         
         h.writeJSONResponse(w, testStep, http.StatusCreated)
