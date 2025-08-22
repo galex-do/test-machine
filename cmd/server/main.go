@@ -33,7 +33,7 @@ func main() {
         if err := goose.SetDialect("postgres"); err != nil {
                 log.Fatal("Failed to set goose dialect:", err)
         }
-        
+
         // Run migrations from the migrations directory
         if err := goose.Up(db, "./migrations"); err != nil {
                 log.Fatal("Failed to run database migrations:", err)
