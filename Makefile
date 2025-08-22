@@ -21,15 +21,15 @@ migrate: migrate-up ## Alias for migrate-up
 
 migrate-up: ## Run all pending migrations using Docker
 	@echo "Running database migrations using Docker..."
-	docker-compose --profile migration up migrate --build
+	docker compose up migrate --build
 
 migrate-down: ## Rollback the last migration using Docker
 	@echo "Rolling back last migration using Docker..."
-	docker-compose run --rm migrate goose postgres "$(DATABASE_URL_CONTAINER)" down
+	docker compose run --rm migrate goose postgres "$(DATABASE_URL_CONTAINER)" down
 
 migrate-status: ## Check migration status using Docker
 	@echo "Checking migration status using Docker..."
-	docker-compose run --rm migrate goose postgres "$(DATABASE_URL_CONTAINER)" status
+	docker compose run --rm migrate goose postgres "$(DATABASE_URL_CONTAINER)" status
 
 migrate-reset: ## Reset database (rollback all migrations) using Docker
 	@echo "WARNING: This will rollback ALL migrations!"
@@ -69,16 +69,16 @@ migrate-local-status: ## Check migration status using local goose installation
 
 # Docker environment commands
 up: ## Start all services (database + app)
-	docker-compose up --build
+	docker compose up --build
 
 up-db: ## Start only the database service
-	docker-compose up postgres
+	docker compose up postgres
 
 down: ## Stop all services
-	docker-compose down
+	docker compose down
 
 clean: ## Stop services and remove volumes
-	docker-compose down -v
+	docker compose down -v
 	docker system prune -f
 
 # Development helpers
