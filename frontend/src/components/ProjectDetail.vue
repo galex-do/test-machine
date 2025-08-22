@@ -15,8 +15,16 @@
       <div>
         <h1 class="h2">{{ project?.name }}</h1>
         <p class="text-muted">{{ project?.description || 'No description available' }}</p>
+        <p v-if="project?.git_project" class="text-muted">
+          <i class="fab fa-git-alt"></i> <strong>Git Project:</strong> {{ project.git_project }}
+        </p>
       </div>
       <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+          <button type="button" class="btn btn-outline-secondary" @click="editProject">
+            <i class="fas fa-edit"></i> Edit Project
+          </button>
+        </div>
         <button type="button" class="btn btn-primary" @click="showCreateTestSuiteModal">
           <i class="fas fa-plus"></i> New Test Suite
         </button>
@@ -102,11 +110,19 @@
 
     <!-- Test Suite Modal -->
     <TestSuiteModal 
-      :show="showModal" 
+      :show="showTestSuiteModal" 
       :testSuite="selectedTestSuite"
       :projectId="parseInt(id)"
-      @close="closeModal"
+      @close="closeTestSuiteModal"
       @saved="handleTestSuiteSaved"
+    />
+
+    <!-- Project Modal -->
+    <ProjectModal 
+      :show="showProjectModal" 
+      :project="project"
+      @close="closeProjectModal"
+      @saved="handleProjectSaved"
     />
   </div>
 </template>
@@ -115,11 +131,13 @@
 import { api } from '../services/api.js'
 import { formatDate, showAlert, showLoading, truncateText } from '../utils/helpers.js'
 import TestSuiteModal from './modals/TestSuiteModal.vue'
+import ProjectModal from './modals/ProjectModal.vue'
 
 export default {
   name: 'ProjectDetail',
   components: {
-    TestSuiteModal
+    TestSuiteModal,
+    ProjectModal
   },
   props: {
     id: {
@@ -132,7 +150,8 @@ export default {
       project: null,
       testSuites: [],
       loading: true,
-      showModal: false,
+      showTestSuiteModal: false,
+      showProjectModal: false,
       selectedTestSuite: null
     }
   },
@@ -174,23 +193,37 @@ export default {
       }
     },
 
+    editProject() {
+      this.showProjectModal = true
+    },
+
+    closeProjectModal() {
+      this.showProjectModal = false
+    },
+
+    handleProjectSaved() {
+      this.closeProjectModal()
+      this.loadData()
+      showAlert('Project updated successfully!', 'success')
+    },
+
     showCreateTestSuiteModal() {
       this.selectedTestSuite = null
-      this.showModal = true
+      this.showTestSuiteModal = true
     },
 
     editTestSuite(testSuite) {
       this.selectedTestSuite = testSuite
-      this.showModal = true
+      this.showTestSuiteModal = true
     },
 
-    closeModal() {
-      this.showModal = false
+    closeTestSuiteModal() {
+      this.showTestSuiteModal = false
       this.selectedTestSuite = null
     },
 
     handleTestSuiteSaved() {
-      this.closeModal()
+      this.closeTestSuiteModal()
       this.loadData()
       showAlert('Test suite saved successfully!', 'success')
     },

@@ -16,6 +16,11 @@
               <label for="projectDescription" class="form-label">Description</label>
               <textarea class="form-control" id="projectDescription" v-model="form.description" rows="3"></textarea>
             </div>
+            <div class="mb-3">
+              <label for="projectGitProject" class="form-label">Git Project <small class="text-muted">(Optional)</small></label>
+              <input type="url" class="form-control" id="projectGitProject" v-model="form.git_project" placeholder="https://github.com/username/project">
+              <div class="form-text">Link to your Git repository (GitHub, GitLab, etc.) for test run integration</div>
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="close">Cancel</button>
@@ -51,7 +56,8 @@ export default {
     return {
       form: {
         name: '',
-        description: ''
+        description: '',
+        git_project: ''
       },
       saving: false
     }
@@ -68,6 +74,7 @@ export default {
         if (this.project) {
           this.form.name = this.project.name
           this.form.description = this.project.description
+          this.form.git_project = this.project.git_project || ''
         }
       }
     }
@@ -80,7 +87,8 @@ export default {
     resetForm() {
       this.form = {
         name: '',
-        description: ''
+        description: '',
+        git_project: ''
       }
     },
 

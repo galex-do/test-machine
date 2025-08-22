@@ -3,6 +3,13 @@
 This is a Test Management Platform built as a web application for organizing and tracking software testing activities. The platform provides functionality for managing test projects, test suites, test cases, and test runs with a comprehensive dashboard and reporting system. It is designed for QA teams and software testers to organize their testing workflows and track test execution results.
 
 ## Recent Changes (August 2025)
+- **PROJECT EDIT & GIT INTEGRATION** (August 22, 2025): Added project editing and Git repository linking
+- Added Edit button to project detail pages for easy project modification
+- Added git_project field to projects for linking test runs to Git repositories/branches
+- Updated project modal with Git project URL input field and helpful tooltips
+- Enhanced project detail view to display linked Git repository information
+- Backend migration added git_project column to projects table
+- Updated all project API endpoints to handle Git project field
 - **FRONTEND/BACKEND SEPARATION** (August 22, 2025): Completed major architectural refactoring
 - Separated monolithic application into independent frontend and backend modules
 - Created complete Vue.js frontend in frontend/ directory with Vite build system
