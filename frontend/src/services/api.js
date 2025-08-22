@@ -67,6 +67,14 @@ export const api = {
   updateTestRun: (id, data) => apiClient.put(`/test-runs/${id}`, data),
   deleteTestRun: (id) => apiClient.delete(`/test-runs/${id}`),
 
+  // Keys
+  getKeys: () => apiClient.get('/keys'),
+  getKey: (id) => apiClient.get(`/keys/${id}`),
+  getKeyData: (id) => apiClient.get(`/keys/${id}/data`),
+  createKey: (data) => apiClient.post('/keys', data),
+  updateKey: (id, data) => apiClient.put(`/keys/${id}`, data),
+  deleteKey: (id) => apiClient.delete(`/keys/${id}`),
+
   // Stats and Reports
   getStats: () => apiClient.get('/stats'),
   getReports: () => apiClient.get('/reports')

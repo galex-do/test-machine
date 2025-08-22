@@ -21,6 +21,11 @@
                 <i class="fas fa-chart-bar"></i> Reports
               </router-link>
             </li>
+            <li class="nav-item">
+              <router-link to="/keys" class="nav-link" :class="{ active: $route.name === 'Keys' }">
+                <i class="fas fa-key"></i> Keys
+              </router-link>
+            </li>
           </ul>
           <div class="d-flex">
             <div class="search-box me-3">

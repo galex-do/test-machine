@@ -47,20 +47,28 @@ func main() {
         }
         log.Println("Database migrations completed successfully")
 
+        // Initialize encryption service
+        encryptionService, err := service.NewEncryptionService()
+        if err != nil {
+                log.Fatal("Failed to initialize encryption service:", err)
+        }
+
         // Initialize repositories
         projectRepo := repository.NewProjectRepository(db)
         testSuiteRepo := repository.NewTestSuiteRepository(db)
         testCaseRepo := repository.NewTestCaseRepository(db)
         testRunRepo := repository.NewTestRunRepository(db)
+        keyRepo := repository.NewKeyRepository(db)
 
         // Initialize services
         projectService := service.NewProjectService(projectRepo)
         testSuiteService := service.NewTestSuiteService(testSuiteRepo)
         testCaseService := service.NewTestCaseService(testCaseRepo)
         testRunService := service.NewTestRunService(testRunRepo)
+        keyService := service.NewKeyService(keyRepo, encryptionService)
 
         // Initialize handlers
-        handler := handlers.NewHandler(projectService, testSuiteService, testCaseService, testRunService)
+        handler := handlers.NewHandler(projectService, testSuiteService, testCaseService, testRunService, keyService)
 
         // Setup routes
         mux := handler.SetupRoutes()

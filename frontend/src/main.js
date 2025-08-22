@@ -9,6 +9,7 @@ import TestSuiteDetail from './components/TestSuiteDetail.vue'
 import TestCaseDetail from './components/TestCaseDetail.vue'
 import TestRunDetail from './components/TestRunDetail.vue'
 import Reports from './components/Reports.vue'
+import Keys from './components/Keys.vue'
 
 // Import styles
 import './style.css'
@@ -20,7 +21,8 @@ const routes = [
   { path: '/project/:pid/test-suite/:sid', name: 'TestSuiteDetail', component: TestSuiteDetail, props: true },
   { path: '/project/:pid/test-suite/:sid/test-case/:cid', name: 'TestCaseDetail', component: TestCaseDetail, props: true },
   { path: '/test-run/:id', name: 'TestRunDetail', component: TestRunDetail, props: true },
-  { path: '/reports', name: 'Reports', component: Reports }
+  { path: '/reports', name: 'Reports', component: Reports },
+  { path: '/keys', name: 'Keys', component: Keys }
 ]
 
 const router = createRouter({

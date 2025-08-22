@@ -143,3 +143,32 @@ type UpdateTestRunRequest struct {
         StartedAt   *time.Time `json:"started_at"`
         CompletedAt *time.Time `json:"completed_at"`
 }
+
+// Key represents an authentication key for Git repositories
+type Key struct {
+        ID            int       `json:"id"`
+        Name          string    `json:"name"`
+        Description   string    `json:"description"`
+        KeyType       string    `json:"key_type"`
+        Username      *string   `json:"username,omitempty"`
+        EncryptedData string    `json:"-"` // Never expose encrypted data in JSON
+        CreatedAt     time.Time `json:"created_at"`
+        UpdatedAt     time.Time `json:"updated_at"`
+}
+
+// CreateKeyRequest represents the request to create a new key
+type CreateKeyRequest struct {
+        Name        string  `json:"name"`
+        Description string  `json:"description"`
+        KeyType     string  `json:"key_type"`
+        Username    *string `json:"username"`
+        SecretData  string  `json:"secret_data"` // This will be encrypted before storage
+}
+
+// UpdateKeyRequest represents the request to update a key
+type UpdateKeyRequest struct {
+        Name        string  `json:"name"`
+        Description string  `json:"description"`
+        Username    *string `json:"username"`
+        SecretData  *string `json:"secret_data,omitempty"` // Optional - only if changing
+}

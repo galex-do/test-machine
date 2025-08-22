@@ -13,15 +13,17 @@ type Handler struct {
         testSuiteService *service.TestSuiteService
         testCaseService  *service.TestCaseService
         testRunService   *service.TestRunService
+        keyService       *service.KeyService
 }
 
 // NewHandler creates a new handler
-func NewHandler(projectService *service.ProjectService, testSuiteService *service.TestSuiteService, testCaseService *service.TestCaseService, testRunService *service.TestRunService) *Handler {
+func NewHandler(projectService *service.ProjectService, testSuiteService *service.TestSuiteService, testCaseService *service.TestCaseService, testRunService *service.TestRunService, keyService *service.KeyService) *Handler {
         return &Handler{
                 projectService:   projectService,
                 testSuiteService: testSuiteService,
                 testCaseService:  testCaseService,
                 testRunService:   testRunService,
+                keyService:       keyService,
         }
 }
 
@@ -39,6 +41,8 @@ func (h *Handler) SetupRoutes() http.Handler {
         mux.HandleFunc("/api/test-runs", h.testRunsAPIHandler)
         mux.HandleFunc("/api/test-runs/", h.testRunAPIHandler)
         mux.HandleFunc("/api/test-steps/", h.testStepAPIHandler)
+        mux.HandleFunc("/api/keys", h.keyAPIHandler)
+        mux.HandleFunc("/api/keys/", h.keyByIDAPIHandler)
         mux.HandleFunc("/api/stats", h.statsAPIHandler)
 
         // Add CORS middleware
