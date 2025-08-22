@@ -38,6 +38,8 @@ services:
     build: .
     ports:
       - "5000:5000"
+    volumes:
+      - ./migrations:/app/migrations
     environment:
       DATABASE_URL: postgres://${DATABASE_USER:-postgres}:${DATABASE_PASSWORD:-postgres}@${DATABASE_HOST:-postgres}:5432/${DATABASE_DB:-test}?sslmode=disable
     depends_on:
