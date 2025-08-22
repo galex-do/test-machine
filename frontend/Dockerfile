@@ -1,5 +1,5 @@
 # Multi-stage build for Vue.js frontend
-FROM node:18-alpine AS build
+FROM node:20-alpine AS build
 
 # Set working directory
 WORKDIR /app
