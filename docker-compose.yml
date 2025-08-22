@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile.migrate
     environment:
-      DATABASE_URL: postgres://${DATABASE_USER:-postgres}:${DATABASE_PASSWORD:-postgres}@postgres:5432/${DATABASE_DB:-test}?sslmode=disable
+      DATABASE_URL: postgres://${DATABASE_USER:-postgres}:${DATABASE_PASSWORD:-postgres}@${DATABASE_HOST:-postgres}:5432/${DATABASE_DB:-test}?sslmode=disable
     command: ["sh", "-c", "goose postgres \"$$DATABASE_URL\" up"]
     depends_on:
       postgres:
@@ -40,6 +40,7 @@ services:
       - "5000:5000"
     environment:
       DATABASE_URL: postgres://${DATABASE_USER:-postgres}:${DATABASE_PASSWORD:-postgres}@${DATABASE_HOST:-postgres}:5432/${DATABASE_DB:-test}?sslmode=disable
+      DATABASE_NAME: ${DATABASE_DB:-test}
     depends_on:
       postgres:
         condition: service_healthy
