@@ -63,7 +63,7 @@
         <div class="card">
           <div class="card-body text-center">
             <h5>Test Steps</h5>
-            <h3>{{ testSteps.length }}</h3>
+            <h3>{{ testSteps?.length || 0 }}</h3>
           </div>
         </div>
       </div>
@@ -84,7 +84,7 @@
       </div>
       <div class="card-body">
         <div v-if="loading" v-html="showLoading()"></div>
-        <div v-else-if="testSteps.length === 0" class="empty-state">
+        <div v-else-if="!testSteps || testSteps.length === 0" class="empty-state">
           <i class="fas fa-list-ol"></i>
           <h5>No Test Steps Found</h5>
           <p>Add test steps to define the testing procedure.</p>
@@ -166,7 +166,7 @@ export default {
   },
   computed: {
     sortedTestSteps() {
-      return [...this.testSteps].sort((a, b) => a.step_number - b.step_number)
+      return this.testSteps ? [...this.testSteps].sort((a, b) => a.step_number - b.step_number) : []
     }
   },
   mounted() {
@@ -192,9 +192,10 @@ export default {
           api.getTestSteps(this.cid)
         ])
         this.testCase = testCaseData
-        this.testSteps = testStepsData
+        this.testSteps = Array.isArray(testStepsData) ? testStepsData : []
       } catch (error) {
         showAlert('Error loading test case data: ' + error.message, 'danger')
+        this.testSteps = [] // Ensure testSteps is always an array
       } finally {
         this.loading = false
       }
