@@ -119,3 +119,40 @@ func (r *TestSuiteRepository) Create(req *models.CreateTestSuiteRequest) (*model
 
         return &testSuite, nil
 }
+
+// Update updates an existing test suite
+func (r *TestSuiteRepository) Update(id int, req *models.UpdateTestSuiteRequest) (*models.TestSuite, error) {
+        var testSuite models.TestSuite
+        err := r.db.QueryRow(
+                "UPDATE test_suites SET name = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, name, description, project_id, created_at, updated_at",
+                req.Name, req.Description, id,
+        ).Scan(&testSuite.ID, &testSuite.Name, &testSuite.Description, &testSuite.ProjectID, &testSuite.CreatedAt, &testSuite.UpdatedAt)
+
+        if err == sql.ErrNoRows {
+                return nil, nil
+        }
+        if err != nil {
+                return nil, err
+        }
+
+        return &testSuite, nil
+}
+
+// Delete deletes a test suite
+func (r *TestSuiteRepository) Delete(id int) error {
+        result, err := r.db.Exec("DELETE FROM test_suites WHERE id = $1", id)
+        if err != nil {
+                return err
+        }
+
+        rowsAffected, err := result.RowsAffected()
+        if err != nil {
+                return err
+        }
+
+        if rowsAffected == 0 {
+                return sql.ErrNoRows
+        }
+
+        return nil
+}

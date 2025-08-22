@@ -86,6 +86,12 @@ type CreateTestSuiteRequest struct {
         ProjectID   int    `json:"project_id"`
 }
 
+// UpdateTestSuiteRequest represents the request to update a test suite
+type UpdateTestSuiteRequest struct {
+        Name        string `json:"name"`
+        Description string `json:"description"`
+}
+
 // CreateTestCaseRequest represents the request to create a new test case
 type CreateTestCaseRequest struct {
         Title       string `json:"title"`

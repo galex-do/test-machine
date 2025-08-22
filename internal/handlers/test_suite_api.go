@@ -33,6 +33,10 @@ func (h *Handler) testSuiteAPIHandler(w http.ResponseWriter, r *http.Request) {
         switch r.Method {
         case "GET":
                 h.getTestSuite(w, r, id)
+        case "PUT":
+                h.updateTestSuite(w, r, id)
+        case "DELETE":
+                h.deleteTestSuite(w, r, id)
         default:
                 h.writeJSONError(w, "Method not allowed", http.StatusMethodNotAllowed)
         }
@@ -88,4 +92,39 @@ func (h *Handler) createTestSuite(w http.ResponseWriter, r *http.Request) {
         }
 
         h.writeJSONResponse(w, testSuite)
+}
+
+func (h *Handler) updateTestSuite(w http.ResponseWriter, r *http.Request, id int) {
+        var req models.UpdateTestSuiteRequest
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+                h.writeJSONError(w, "Invalid JSON", http.StatusBadRequest)
+                return
+        }
+
+        testSuite, err := h.testSuiteService.Update(id, &req)
+        if err != nil {
+                h.writeJSONError(w, err.Error(), http.StatusBadRequest)
+                return
+        }
+
+        if testSuite == nil {
+                h.writeJSONError(w, "Test suite not found", http.StatusNotFound)
+                return
+        }
+
+        h.writeJSONResponse(w, testSuite)
+}
+
+func (h *Handler) deleteTestSuite(w http.ResponseWriter, r *http.Request, id int) {
+        err := h.testSuiteService.Delete(id)
+        if err != nil {
+                if err.Error() == "sql: no rows in result set" {
+                        h.writeJSONError(w, "Test suite not found", http.StatusNotFound)
+                        return
+                }
+                h.writeJSONError(w, "Database error", http.StatusInternalServerError)
+                return
+        }
+
+        w.WriteHeader(http.StatusNoContent)
 }

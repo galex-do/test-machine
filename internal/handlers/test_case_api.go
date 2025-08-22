@@ -151,8 +151,24 @@ func (h *Handler) createTestStep(w http.ResponseWriter, r *http.Request, testCas
 }
 
 func (h *Handler) updateTestCase(w http.ResponseWriter, r *http.Request, id int) {
-        // TODO: Implement update functionality when service method is available
-        h.writeJSONError(w, "Update not implemented", http.StatusNotImplemented)
+        var req models.UpdateTestCaseRequest
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+                h.writeJSONError(w, "Invalid JSON", http.StatusBadRequest)
+                return
+        }
+
+        testCase, err := h.testCaseService.Update(id, &req)
+        if err != nil {
+                h.writeJSONError(w, err.Error(), http.StatusBadRequest)
+                return
+        }
+
+        if testCase == nil {
+                h.writeJSONError(w, "Test case not found", http.StatusNotFound)
+                return
+        }
+
+        h.writeJSONResponse(w, testCase)
 }
 
 func (h *Handler) deleteTestCase(w http.ResponseWriter, r *http.Request, id int) {

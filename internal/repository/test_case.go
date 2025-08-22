@@ -202,6 +202,24 @@ func (r *TestCaseRepository) UpdateTestStep(id int, req *models.UpdateTestStepRe
         return &testStep, nil
 }
 
+// Update updates an existing test case
+func (r *TestCaseRepository) Update(id int, req *models.UpdateTestCaseRequest) (*models.TestCase, error) {
+        var testCase models.TestCase
+        err := r.db.QueryRow(
+                "UPDATE test_cases SET title = $1, description = $2, priority = $3, status = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING id, title, description, priority, status, test_suite_id, created_at, updated_at",
+                req.Title, req.Description, req.Priority, req.Status, id,
+        ).Scan(&testCase.ID, &testCase.Title, &testCase.Description, &testCase.Priority, &testCase.Status, &testCase.TestSuiteID, &testCase.CreatedAt, &testCase.UpdatedAt)
+
+        if err == sql.ErrNoRows {
+                return nil, nil
+        }
+        if err != nil {
+                return nil, err
+        }
+
+        return &testCase, nil
+}
+
 // DeleteTestStep deletes a test step
 func (r *TestCaseRepository) DeleteTestStep(id int) error {
         result, err := r.db.Exec("DELETE FROM test_steps WHERE id = $1", id)

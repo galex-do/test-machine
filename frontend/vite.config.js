@@ -1,5 +1,8 @@
-// Basic config that works for both local dev and Docker builds
-export default {
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+export default defineConfig({
+  plugins: [vue()],
   server: {
     host: '0.0.0.0',
     port: 5000,
@@ -14,4 +17,4 @@ export default {
     outDir: 'dist',
     assetsDir: 'assets'
   }
-}
+})
