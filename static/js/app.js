@@ -1155,6 +1155,20 @@ function showCreateTestStepModal() {
     document.getElementById('testStepForm').reset();
     document.getElementById('testStepModalTitle').textContent = 'Add New Test Step';
     document.getElementById('testStepId').value = '';
+    
+    // Auto-calculate next step number
+    API.getTestSteps(currentTestCase).then(testSteps => {
+        let nextStepNumber = 1;
+        if (testSteps && testSteps.length > 0) {
+            const maxStepNumber = Math.max(...testSteps.map(step => step.step_number));
+            nextStepNumber = maxStepNumber + 1;
+        }
+        document.getElementById('testStepNumber').value = nextStepNumber;
+    }).catch(error => {
+        console.error('Error getting test steps for auto-numbering:', error);
+        // Fallback to step number 1 if there's an error
+        document.getElementById('testStepNumber').value = 1;
+    });
 }
 
 function showCreateTestRunModal() {
