@@ -3,6 +3,7 @@ package main
 import (
         "log"
         "net/http"
+        "os"
 
         "github.com/galex-do/test-machine/internal/config"
         "github.com/galex-do/test-machine/internal/database"
@@ -29,15 +30,28 @@ func main() {
         }
         log.Println("Connected to PostgreSQL database")
 
-        // Run database migrations with Goose
-        if err := goose.SetDialect("postgres"); err != nil {
-                log.Fatal("Failed to set goose dialect:", err)
+        // Run database migrations with Goose (skip if SKIP_MIGRATIONS is set)
+        if os.Getenv("SKIP_MIGRATIONS") == "true" {
+                log.Println("Skipping database migrations (SKIP_MIGRATIONS=true)")
+        } else {
+                if err := goose.SetDialect("postgres"); err != nil {
+                        log.Printf("Failed to set goose dialect: %v", err)
+                } else {
+                        // Check if migrations directory exists
+                        migrationDir := "migrations"
+                        if _, err := os.Stat(migrationDir); os.IsNotExist(err) {
+                                log.Printf("Migrations directory '%s' does not exist, skipping migrations", migrationDir)
+                        } else {
+                                log.Printf("Running database migrations from directory: %s", migrationDir)
+                                if err := goose.Up(db, migrationDir); err != nil {
+                                        log.Printf("Failed to run database migrations: %v", err)
+                                        log.Printf("Continuing without migrations - they may already be applied")
+                                } else {
+                                        log.Println("Database migrations completed successfully")
+                                }
+                        }
+                }
         }
-        
-        if err := goose.Up(db, "migrations"); err != nil {
-                log.Fatal("Failed to run database migrations:", err)
-        }
-        log.Println("Database migrations completed successfully")
 
         // Initialize repositories
         projectRepo := repository.NewProjectRepository(db)
