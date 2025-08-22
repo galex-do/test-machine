@@ -43,7 +43,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd frontend && python3 -m http.server 5000 --bind 0.0.0.0"
+args = "cd frontend && npm run dev"
 waitForPort = 5000
 
 [[ports]]
