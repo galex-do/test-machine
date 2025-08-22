@@ -31,6 +31,18 @@ CREATE TABLE IF NOT EXISTS test_cases (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Test Steps table
+CREATE TABLE IF NOT EXISTS test_steps (
+    id SERIAL PRIMARY KEY,
+    test_case_id INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
+    step_number INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    expected_result TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(test_case_id, step_number)
+);
+
 -- Test Runs table
 CREATE TABLE IF NOT EXISTS test_runs (
     id SERIAL PRIMARY KEY,
@@ -50,6 +62,7 @@ CREATE TABLE IF NOT EXISTS test_runs (
 -- Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_test_suites_project_id ON test_suites(project_id);
 CREATE INDEX IF NOT EXISTS idx_test_cases_test_suite_id ON test_cases(test_suite_id);
+CREATE INDEX IF NOT EXISTS idx_test_steps_test_case_id ON test_steps(test_case_id);
 CREATE INDEX IF NOT EXISTS idx_test_runs_test_case_id ON test_runs(test_case_id);
 CREATE INDEX IF NOT EXISTS idx_projects_name ON projects(name);
 CREATE INDEX IF NOT EXISTS idx_test_cases_status ON test_cases(status);
@@ -81,5 +94,20 @@ BEGIN
             ('Payment Processing', 'Test payment gateway integration', 'Critical', 2),
             ('Navigation Menu', 'Test mobile app navigation menu', 'High', 3),
             ('Screen Transitions', 'Test smooth transitions between screens', 'Medium', 3);
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM test_steps) THEN
+        INSERT INTO test_steps (test_case_id, step_number, description, expected_result) VALUES
+            (1, 1, 'Navigate to the login page', 'Login page loads successfully with username and password fields'),
+            (1, 2, 'Enter valid username and password', 'Credentials are accepted and fields show no validation errors'),
+            (1, 3, 'Click the login button', 'User is redirected to dashboard and sees welcome message'),
+            (2, 1, 'Navigate to the login page', 'Login page loads successfully'),
+            (2, 2, 'Enter valid username but invalid password', 'Password field shows validation error'),
+            (2, 3, 'Click the login button', 'Error message displays: "Invalid password"'),
+            (7, 1, 'Open the mobile application', 'Application launches successfully and shows the main screen'),
+            (7, 2, 'Tap on the navigation menu button', 'Navigation menu slides out from the left side'),
+            (7, 3, 'Verify all menu items are visible', 'All navigation options are displayed: Home, Profile, Settings, Logout'),
+            (8, 1, 'Navigate from home screen to profile', 'Screen transitions smoothly with appropriate animation'),
+            (8, 2, 'Return to home screen using back button', 'Transition back is smooth and maintains app state');
     END IF;
 END $$;

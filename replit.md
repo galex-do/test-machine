@@ -26,6 +26,14 @@ This is a Test Management Platform built as a web application for organizing and
 - Added count fields to Project and TestSuite models for accurate counters
 - Enhanced SQL queries with JOINs to calculate real test suite and test case counts
 - Fixed DOM element loading issues with fallback creation mechanisms
+- **TEST STEPS FUNCTIONALITY**: Implemented complete test steps feature (August 22, 2025)
+- Created test_steps table with proper foreign keys and unique constraints
+- Added TestStep model with full CRUD operations in repository layer
+- Implemented test steps service methods with validation
+- Updated API handlers to support /api/test-cases/{id}/steps endpoints
+- Added sample test step data for testing purposes
+- Updated both schema.sql and init_db.sql files for consistency
+- Resolved DOM innerHTML errors by fixing missing API functionality
 
 # User Preferences
 
