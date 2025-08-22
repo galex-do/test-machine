@@ -32,33 +32,11 @@
       </div>
     </nav>
 
+    <!-- Main content -->
     <div class="container-fluid">
-      <div class="row">
-        <!-- Sidebar -->
-        <nav class="col-md-2 d-md-block sidebar">
-          <div class="position-sticky pt-3">
-            <ul class="nav flex-column">
-              <li class="nav-item">
-                <router-link to="/" class="nav-link" :class="{ active: $route.name === 'Dashboard' }">
-                  <i class="fas fa-tachometer-alt"></i>
-                  Dashboard
-                </router-link>
-              </li>
-              <li class="nav-item">
-                <router-link to="/reports" class="nav-link" :class="{ active: $route.name === 'Reports' }">
-                  <i class="fas fa-chart-bar"></i>
-                  Reports
-                </router-link>
-              </li>
-            </ul>
-          </div>
-        </nav>
-
-        <!-- Main content -->
-        <main class="col-md-10 ms-sm-auto col-lg-10 px-md-4">
-          <router-view></router-view>
-        </main>
-      </div>
+      <main class="px-4">
+        <router-view></router-view>
+      </main>
     </div>
 
     <!-- Alert container -->
