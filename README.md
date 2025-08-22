@@ -77,7 +77,15 @@ The application includes sample data with:
 
 ```
 .
-├── simple_main.go          # Main application file
+├── cmd/server/main.go      # Application entry point
+├── internal/               # Application packages
+│   ├── config/            # Configuration management
+│   ├── database/          # Database connection
+│   ├── handlers/          # HTTP handlers
+│   ├── models/            # Data models
+│   ├── repository/        # Data access layer
+│   └── service/           # Business logic layer
+├── migrations/             # Database migrations
 ├── templates/              # HTML templates
 │   ├── index.html          # Dashboard
 │   ├── project.html        # Project details
@@ -88,8 +96,11 @@ The application includes sample data with:
 ├── static/                 # Static assets
 │   ├── css/style.css       # Custom styles
 │   └── js/app.js          # Client-side JavaScript
+├── init_db.sql             # Database schema and sample data
 ├── Dockerfile              # Docker build instructions
-└── docker-compose.yml     # Docker Compose configuration
+├── Dockerfile.migrate      # Migration container
+├── docker-compose.yml     # Docker Compose configuration
+└── Makefile               # Development commands
 ```
 
 ### API Endpoints
@@ -118,9 +129,30 @@ The PostgreSQL database includes the following tables:
 - **Projects**: Top-level test organization
 - **Test Suites**: Grouped collections of test cases
 - **Test Cases**: Individual test scenarios with priority and status
+- **Test Steps**: Detailed step-by-step instructions for test cases
 - **Test Runs**: Execution records with results and metadata
 
-All tables include proper foreign key relationships, indexes for performance, and audit timestamps.
+All tables include proper foreign key relationships, indexes for performance, and audit timestamps. The schema is automatically initialized via `init_db.sql` during Docker deployment.
+
+## Database Migrations
+
+The project uses Goose for database migrations with Docker support:
+
+```bash
+# Run all migrations using Docker (no local Goose required)
+make migrate
+
+# Check migration status
+make migrate-status
+
+# Create new migration
+make migrate-create NAME=add_new_feature
+
+# Rollback last migration
+make migrate-down
+```
+
+For more details, see `migrations/README.md` and `DOCKER_MIGRATIONS.md`.
 
 ## Configuration
 

@@ -32,7 +32,7 @@ This is a Test Management Platform built as a web application for organizing and
 - Implemented test steps service methods with validation
 - Updated API handlers to support /api/test-cases/{id}/steps endpoints
 - Added sample test step data for testing purposes
-- Updated both schema.sql and init_db.sql files for consistency
+- Consolidated database schema into single init_db.sql file for deployment
 - Resolved DOM innerHTML errors by fixing missing API functionality
 - **MIGRATION SYSTEM**: Replaced custom migration system with Goose (August 22, 2025)
 - Integrated Pressly/Goose for professional database migration management
@@ -46,6 +46,9 @@ This is a Test Management Platform built as a web application for organizing and
 - Added comprehensive Makefile with Docker-based migration commands
 - Supports migrations without requiring local Goose installation
 - Health checks and dependency management for reliable migration execution
+- **DATABASE SCHEMA CONSOLIDATION**: Simplified database setup (August 22, 2025)
+- Removed redundant schema.sql file, keeping only init_db.sql for deployments
+- Single source of truth for database schema with robust existence checks
 
 # User Preferences
 
