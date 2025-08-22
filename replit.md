@@ -34,6 +34,12 @@ This is a Test Management Platform built as a web application for organizing and
 - Added sample test step data for testing purposes
 - Updated both schema.sql and init_db.sql files for consistency
 - Resolved DOM innerHTML errors by fixing missing API functionality
+- **MIGRATION SYSTEM**: Replaced custom migration system with Goose (August 22, 2025)
+- Integrated Pressly/Goose for professional database migration management
+- Created timestamped migration files in migrations/ directory
+- Automatic migration execution on application startup
+- Goose tracks applied migrations in goose_db_version table
+- Added comprehensive migration documentation and README
 
 # User Preferences
 

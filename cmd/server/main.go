@@ -7,9 +7,10 @@ import (
         "github.com/galex-do/test-machine/internal/config"
         "github.com/galex-do/test-machine/internal/database"
         "github.com/galex-do/test-machine/internal/handlers"
-        "github.com/galex-do/test-machine/internal/migrations"
         "github.com/galex-do/test-machine/internal/repository"
         "github.com/galex-do/test-machine/internal/service"
+        "github.com/pressly/goose/v3"
+        _ "github.com/lib/pq"
 )
 
 func main() {
@@ -28,11 +29,15 @@ func main() {
         }
         log.Println("Connected to PostgreSQL database")
 
-        // Run database migrations
-        migrator := migrations.NewMigrator(db)
-        if err := migrator.Run(); err != nil {
+        // Run database migrations with Goose
+        if err := goose.SetDialect("postgres"); err != nil {
+                log.Fatal("Failed to set goose dialect:", err)
+        }
+        
+        if err := goose.Up(db, "migrations"); err != nil {
                 log.Fatal("Failed to run database migrations:", err)
         }
+        log.Println("Database migrations completed successfully")
 
         // Initialize repositories
         projectRepo := repository.NewProjectRepository(db)
