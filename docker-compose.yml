@@ -12,6 +12,26 @@ services:
       - ./postgres_data:/var/lib/postgresql/data
       - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres} -d ${DATABASE_DB:-test}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Database Migration Service using Goose
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    environment:
+      DATABASE_URL: postgres://${DATABASE_USER:-postgres}:${DATABASE_PASSWORD:-postgres}@postgres:5432/${DATABASE_DB:-test}?sslmode=disable
+    command: ["sh", "-c", "goose postgres \"$$DATABASE_URL\" up"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    profiles:
+      - migration
 
   # Test Management Application
   app:
@@ -21,7 +41,8 @@ services:
     environment:
       DATABASE_URL: postgres://${DATABASE_USER:-postgres}:${DATABASE_PASSWORD:-postgres}@${DATABASE_HOST:-postgres}:5432/${DATABASE_DB:-test}?sslmode=disable
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     # Wait for postgres to be ready
     command: >

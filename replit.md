@@ -40,6 +40,12 @@ This is a Test Management Platform built as a web application for organizing and
 - Automatic migration execution on application startup
 - Goose tracks applied migrations in goose_db_version table
 - Added comprehensive migration documentation and README
+- **DOCKER MIGRATION SUPPORT**: Added containerized migration system (August 22, 2025)
+- Created Dockerfile.migrate with Goose for container-based migrations
+- Updated docker-compose.yml with migration service using profiles
+- Added comprehensive Makefile with Docker-based migration commands
+- Supports migrations without requiring local Goose installation
+- Health checks and dependency management for reliable migration execution
 
 # User Preferences
 
