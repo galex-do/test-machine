@@ -7,6 +7,7 @@ import (
         "github.com/galex-do/test-machine/internal/config"
         "github.com/galex-do/test-machine/internal/database"
         "github.com/galex-do/test-machine/internal/handlers"
+        "github.com/galex-do/test-machine/internal/migrations"
         "github.com/galex-do/test-machine/internal/repository"
         "github.com/galex-do/test-machine/internal/service"
 )
@@ -26,6 +27,12 @@ func main() {
                 log.Fatal("Failed to ping database:", err)
         }
         log.Println("Connected to PostgreSQL database")
+
+        // Run database migrations
+        migrator := migrations.NewMigrator(db)
+        if err := migrator.Run(); err != nil {
+                log.Fatal("Failed to run database migrations:", err)
+        }
 
         // Initialize repositories
         projectRepo := repository.NewProjectRepository(db)
