@@ -60,3 +60,8 @@ func (s *TestCaseService) UpdateTestStep(id int, req *models.UpdateTestStepReque
 func (s *TestCaseService) DeleteTestStep(id int) error {
         return s.repo.DeleteTestStep(id)
 }
+
+// Delete deletes a test case and all its related test steps
+func (s *TestCaseService) Delete(id int) error {
+        return s.repo.Delete(id)
+}

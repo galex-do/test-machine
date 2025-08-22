@@ -511,6 +511,9 @@ function renderTestCasesTable(testCases, container) {
                         <button class="btn btn-outline-secondary btn-sm" onclick="editTestCase(${testCase.id})">
                             <i class="fas fa-edit"></i> Edit
                         </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteTestCase(${testCase.id}, '${testCase.title}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -1399,6 +1402,22 @@ function handleExecutionForm() {
     });
     
     return false;
+}
+
+// Test Case Deletion
+function deleteTestCase(testCaseId, testCaseTitle) {
+    if (confirm(`Are you sure you want to delete the test case "${testCaseTitle}"?\n\nThis will also delete all related test steps and cannot be undone.`)) {
+        API.deleteTestCase(testCaseId).then(() => {
+            showAlert(`Test case "${testCaseTitle}" deleted successfully`, 'success');
+            // Reload the test suite details to update the display
+            if (typeof loadTestSuiteDetails === 'function' && currentTestSuite) {
+                loadTestSuiteDetails(currentTestSuite);
+            }
+        }).catch(error => {
+            console.error('Error deleting test case:', error);
+            showAlert('Error deleting test case', 'danger');
+        });
+    }
 }
 
 // Export functions

@@ -156,6 +156,15 @@ func (h *Handler) updateTestCase(w http.ResponseWriter, r *http.Request, id int)
 }
 
 func (h *Handler) deleteTestCase(w http.ResponseWriter, r *http.Request, id int) {
-        // TODO: Implement delete functionality when service method is available
-        h.writeJSONError(w, "Delete not implemented", http.StatusNotImplemented)
+        err := h.testCaseService.Delete(id)
+        if err != nil {
+                if err.Error() == "sql: no rows in result set" {
+                        h.writeJSONError(w, "Test case not found", http.StatusNotFound)
+                        return
+                }
+                h.writeJSONError(w, "Database error", http.StatusInternalServerError)
+                return
+        }
+
+        w.WriteHeader(http.StatusNoContent)
 }

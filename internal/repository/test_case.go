@@ -207,3 +207,35 @@ func (r *TestCaseRepository) DeleteTestStep(id int) error {
 
         return nil
 }
+
+// Delete deletes a test case and all its related test steps
+func (r *TestCaseRepository) Delete(id int) error {
+        tx, err := r.db.Begin()
+        if err != nil {
+                return err
+        }
+        defer tx.Rollback()
+
+        // First delete all test steps related to this test case
+        _, err = tx.Exec("DELETE FROM test_steps WHERE test_case_id = $1", id)
+        if err != nil {
+                return err
+        }
+
+        // Then delete the test case itself
+        result, err := tx.Exec("DELETE FROM test_cases WHERE id = $1", id)
+        if err != nil {
+                return err
+        }
+
+        rowsAffected, err := result.RowsAffected()
+        if err != nil {
+                return err
+        }
+
+        if rowsAffected == 0 {
+                return sql.ErrNoRows
+        }
+
+        return tx.Commit()
+}
