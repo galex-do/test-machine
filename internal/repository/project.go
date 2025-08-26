@@ -124,6 +124,13 @@ func (r *ProjectRepository) GetByID(id int) (*models.Project, error) {
         return &project, nil
 }
 
+// CountProjectsByRepositoryID returns the count of projects using a specific repository
+func (r *ProjectRepository) CountProjectsByRepositoryID(repositoryID int) (int, error) {
+        var count int
+        err := r.db.QueryRow("SELECT COUNT(*) FROM projects WHERE repository_id = $1", repositoryID).Scan(&count)
+        return count, err
+}
+
 // Create creates a new project
 func (r *ProjectRepository) Create(req *models.CreateProjectRequest) (*models.Project, error) {
         var project models.Project

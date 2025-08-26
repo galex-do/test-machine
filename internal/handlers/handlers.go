@@ -20,10 +20,11 @@ type Handler struct {
         keyService       *service.KeyService
         gitService       *service.GitService
         repositoryRepo   *repository.RepositoryRepository
+        projectRepo      *repository.ProjectRepository
 }
 
 // NewHandler creates a new handler
-func NewHandler(projectService *service.ProjectService, testSuiteService *service.TestSuiteService, testCaseService *service.TestCaseService, testRunService *service.TestRunService, keyService *service.KeyService, gitService *service.GitService, repositoryRepo *repository.RepositoryRepository) *Handler {
+func NewHandler(projectService *service.ProjectService, testSuiteService *service.TestSuiteService, testCaseService *service.TestCaseService, testRunService *service.TestRunService, keyService *service.KeyService, gitService *service.GitService, repositoryRepo *repository.RepositoryRepository, projectRepo *repository.ProjectRepository) *Handler {
         return &Handler{
                 projectService:   projectService,
                 testSuiteService: testSuiteService,
@@ -32,6 +33,7 @@ func NewHandler(projectService *service.ProjectService, testSuiteService *servic
                 keyService:       keyService,
                 gitService:       gitService,
                 repositoryRepo:   repositoryRepo,
+                projectRepo:      projectRepo,
         }
 }
 
@@ -305,7 +307,19 @@ func (h *Handler) repositoryAPIHandler(w http.ResponseWriter, r *http.Request) {
                 h.writeJSONResponse(w, repository)
 
         case "DELETE":
-                err := h.repositoryRepo.Delete(id)
+                // Check if repository is being used by any projects
+                projectCount, err := h.projectRepo.CountProjectsByRepositoryID(id)
+                if err != nil {
+                        h.writeJSONError(w, "Error checking repository usage", http.StatusInternalServerError)
+                        return
+                }
+
+                if projectCount > 0 {
+                        h.writeJSONError(w, "Cannot delete repository: it is linked to one or more projects", http.StatusConflict)
+                        return
+                }
+
+                err = h.repositoryRepo.Delete(id)
                 if err != nil {
                         if err.Error() == "repository not found" {
                                 h.writeJSONError(w, "Repository not found", http.StatusNotFound)

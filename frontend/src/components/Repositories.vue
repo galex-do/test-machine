@@ -17,92 +17,87 @@
       </div>
     </div>
 
-    <div v-if="!loading && repositories.length === 0" class="text-center py-5">
+    <div v-if="!loading && (!repositories || repositories.length === 0)" class="text-center py-5">
       <div class="text-muted">
         <i class="fas fa-code-branch fa-3x mb-3"></i>
         <p>No repositories found. Add your first repository to get started!</p>
       </div>
     </div>
 
-    <div v-if="!loading && repositories.length > 0">
-      <div class="row">
-        <div 
-          v-for="repository in repositories" 
-          :key="repository.id" 
-          class="col-md-6 col-lg-4 mb-4"
-        >
-          <div class="card h-100">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <h5 class="card-title">{{ repository.name }}</h5>
-                <div class="dropdown">
+    <div v-if="!loading && repositories && repositories.length > 0">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Repository Name</th>
+              <th>Remote URL</th>
+              <th>Authentication Key</th>
+              <th>Last Sync</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="repository in repositories" :key="repository.id">
+              <td>
+                <div>
+                  <strong>{{ repository.name }}</strong>
+                  <div v-if="repository.description" class="text-muted small">{{ repository.description }}</div>
+                </div>
+              </td>
+              <td>
+                <a :href="repository.remote_url" target="_blank" class="text-decoration-none">
+                  {{ repository.remote_url }}
+                  <i class="fas fa-external-link-alt ms-1 text-muted small"></i>
+                </a>
+              </td>
+              <td>
+                <span v-if="repository.key" class="badge bg-secondary">
+                  <i class="fas fa-key me-1"></i>{{ repository.key.name }}
+                </span>
+                <span v-else class="text-muted">
+                  <i class="fas fa-globe me-1"></i>Public
+                </span>
+              </td>
+              <td>
+                <span v-if="repository.synced_at" class="text-success">
+                  <i class="fas fa-check-circle me-1"></i>{{ formatDate(repository.synced_at) }}
+                </span>
+                <span v-else class="text-muted">
+                  <i class="fas fa-clock me-1"></i>Not synced
+                </span>
+              </td>
+              <td class="text-end">
+                <div class="btn-group" role="group">
                   <button 
-                    class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                     type="button" 
-                    :id="`repo-dropdown-${repository.id}`"
-                    data-bs-toggle="dropdown" 
-                    aria-expanded="false"
+                    class="btn btn-outline-primary btn-sm"
+                    @click="syncRepository(repository)"
+                    :disabled="syncing === repository.id"
+                    :title="syncing === repository.id ? 'Syncing...' : 'Sync repository'"
                   >
-                    <i class="fas fa-ellipsis-v"></i>
+                    <i class="fas fa-sync-alt" :class="{ 'fa-spin': syncing === repository.id }"></i>
                   </button>
-                  <ul class="dropdown-menu" :aria-labelledby="`repo-dropdown-${repository.id}`">
-                    <li>
-                      <a 
-                        class="dropdown-item" 
-                        href="#" 
-                        @click.prevent="editRepository(repository)"
-                      >
-                        <i class="fas fa-edit"></i> Edit
-                      </a>
-                    </li>
-                    <li>
-                      <a 
-                        class="dropdown-item text-primary" 
-                        href="#" 
-                        @click.prevent="syncRepository(repository)"
-                        :disabled="syncing === repository.id"
-                      >
-                        <i class="fas fa-sync-alt" :class="{ 'fa-spin': syncing === repository.id }"></i> 
-                        {{ syncing === repository.id ? 'Syncing...' : 'Sync' }}
-                      </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                      <a 
-                        class="dropdown-item text-danger" 
-                        href="#" 
-                        @click.prevent="deleteRepository(repository)"
-                      >
-                        <i class="fas fa-trash"></i> Delete
-                      </a>
-                    </li>
-                  </ul>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-secondary btn-sm"
+                    @click="editRepository(repository)"
+                    title="Edit repository"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-danger btn-sm"
+                    @click="deleteRepository(repository)"
+                    title="Delete repository"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </button>
                 </div>
-              </div>
-              
-              <p class="card-text text-muted">{{ repository.description }}</p>
-              
-              <div class="small mb-2">
-                <div class="d-flex align-items-center mb-1">
-                  <i class="fas fa-link text-muted me-2"></i>
-                  <a :href="repository.remote_url" target="_blank" class="text-decoration-none">
-                    {{ truncateUrl(repository.remote_url) }}
-                  </a>
-                </div>
-                
-                <div v-if="repository.key" class="d-flex align-items-center mb-1">
-                  <i class="fas fa-key text-muted me-2"></i>
-                  <span class="badge bg-secondary">{{ repository.key.name }}</span>
-                </div>
-                
-                <div v-if="repository.synced_at" class="d-flex align-items-center">
-                  <i class="fas fa-clock text-muted me-2"></i>
-                  <span>Last synced: {{ formatDate(repository.synced_at) }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -118,7 +113,7 @@
 
 <script>
 import { api } from '../services/api.js'
-import { formatDate, showAlert, truncateText } from '../utils/helpers.js'
+import { formatDate, showAlert } from '../utils/helpers.js'
 import RepositoryModal from './modals/RepositoryModal.vue'
 
 export default {
@@ -141,17 +136,14 @@ export default {
   methods: {
     formatDate,
     
-    truncateUrl(url) {
-      if (url.length > 40) {
-        return url.substring(0, 37) + '...'
-      }
-      return url
-    },
-    
     async loadRepositories() {
       this.loading = true
       try {
         this.repositories = await api.getRepositories()
+        // Ensure repositories is always an array
+        if (!Array.isArray(this.repositories)) {
+          this.repositories = []
+        }
       } catch (error) {
         showAlert('Error loading repositories: ' + error.message, 'danger')
         this.repositories = []
@@ -199,11 +191,24 @@ export default {
     },
 
     async deleteRepository(repository) {
-      if (!confirm(`Are you sure you want to delete repository "${repository.name}"? This action cannot be undone and will affect any projects using this repository.`)) {
-        return
-      }
-
+      // Check if repository is being used by any projects
       try {
+        const projects = await api.getProjects()
+        const linkedProjects = projects.filter(p => p.repository_id === repository.id)
+        
+        if (linkedProjects.length > 0) {
+          const projectNames = linkedProjects.map(p => p.name).join(', ')
+          showAlert(
+            `Cannot delete repository "${repository.name}" because it is linked to the following project(s): ${projectNames}. Please unlink the repository from these projects first.`,
+            'warning'
+          )
+          return
+        }
+        
+        if (!confirm(`Are you sure you want to delete repository "${repository.name}"? This action cannot be undone.`)) {
+          return
+        }
+
         await api.deleteRepository(repository.id)
         showAlert('Repository deleted successfully!', 'success')
         this.loadRepositories()
@@ -220,22 +225,18 @@ export default {
   padding: 20px;
 }
 
-.card {
-  transition: box-shadow 0.15s ease-in-out;
-}
-
-.card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.dropdown-toggle::after {
-  display: none;
-}
-
-.card-title {
-  color: #333;
-  font-size: 1.1rem;
+.table th {
+  border-top: none;
   font-weight: 600;
+}
+
+.btn-group .btn {
+  border-radius: 0.25rem;
+  margin-left: 2px;
+}
+
+.btn-group .btn:first-child {
+  margin-left: 0;
 }
 
 .fa-spin {
@@ -249,5 +250,18 @@ export default {
   100% {
     transform: rotate(359deg);
   }
+}
+
+.table-responsive {
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.badge {
+  font-size: 0.75rem;
 }
 </style>
