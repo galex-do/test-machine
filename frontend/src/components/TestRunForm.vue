@@ -446,6 +446,11 @@ export default {
           this.gitReferences = []
         }
 
+        // Clear selected test cases only if not editing (creating new test run)
+        if (!this.isEditing) {
+          this.selectedTestCases = []
+        }
+
       } catch (error) {
         console.error('Error loading project data:', error)
         showAlert('Failed to load project data', 'error')
