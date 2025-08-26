@@ -85,6 +85,28 @@
                 </select>
               </div>
 
+              <!-- Git Repository Info -->
+              <div v-if="selectedProject && selectedProject.repository" class="mb-3">
+                <label class="form-label">Git Repository</label>
+                <div class="card">
+                  <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <h6 class="mb-0">{{ selectedProject.repository.name }}</h6>
+                      <a 
+                        v-if="selectedProject.repository.remote_url" 
+                        :href="selectedProject.repository.remote_url" 
+                        target="_blank" 
+                        class="btn btn-sm btn-outline-primary"
+                        title="Open in Git"
+                      >
+                        <i class="fas fa-external-link-alt"></i>
+                      </a>
+                    </div>
+                    <small class="text-muted">{{ selectedProject.repository.remote_url }}</small>
+                  </div>
+                </div>
+              </div>
+
               <!-- Git Reference -->
               <div v-if="selectedProject && selectedProject.repository" class="mb-3">
                 <label class="form-label">Git Reference</label>
@@ -102,12 +124,16 @@
                       v-model="selectedGitReference"
                     >
                       <option value="">{{ gitReferenceType === 'branch' ? 'Select branch...' : 'Select tag...' }}</option>
-                      <option v-for="ref in gitReferences" :key="ref" :value="ref">{{ ref }}</option>
+                      <option v-for="ref in gitReferences" :key="ref.name" :value="ref.name">{{ ref.name }}</option>
                     </select>
                   </div>
                 </div>
                 <div v-if="!gitReferences.length && selectedProject.repository" class="form-text text-muted">
-                  Loading {{ gitReferenceType }}s...
+                  <span v-if="loadingGitReferences">Loading {{ gitReferenceType }}s...</span>
+                  <span v-else>
+                    No {{ gitReferenceType }}s found. 
+                    <small>Repository may need to be synced first.</small>
+                  </span>
                 </div>
               </div>
 
@@ -304,6 +330,7 @@ export default {
       priorityFilter: '',
       gitReferenceType: 'branch',
       gitReferences: [],
+      loadingGitReferences: false,
       expandedSuites: new Set()
     }
   },
@@ -429,7 +456,8 @@ export default {
       if (!this.selectedProject?.repository) return
 
       try {
-        const response = await api.getRepository(this.selectedProject.repository.id)
+        this.loadingGitReferences = true
+        const response = await api.getRepositoryDetails(this.selectedProject.repository.id)
         const repo = response
         
         if (this.gitReferenceType === 'branch') {
@@ -440,6 +468,8 @@ export default {
       } catch (error) {
         console.error('Error loading git references:', error)
         this.gitReferences = []
+      } finally {
+        this.loadingGitReferences = false
       }
     },
 
