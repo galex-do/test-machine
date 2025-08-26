@@ -420,9 +420,23 @@ export default {
         // Debug after loading test suites
         console.log('Test suites loaded:', this.testSuites)
         console.log('All test case IDs available:')
+        const allAvailableIds = []
         this.testSuites.forEach(suite => {
-          console.log(`Suite ${suite.name}:`, suite.test_cases?.map(tc => tc.id) || [])
+          const suiteIds = suite.test_cases?.map(tc => tc.id) || []
+          console.log(`Suite ${suite.name}:`, suiteIds)
+          allAvailableIds.push(...suiteIds)
         })
+        console.log('All available test case IDs:', allAvailableIds)
+        console.log('Selected test case IDs from test run:', this.selectedTestCases)
+        
+        // Check for missing test cases
+        const missingIds = this.selectedTestCases.filter(id => !allAvailableIds.includes(id))
+        if (missingIds.length > 0) {
+          console.warn('WARNING: Test run references test cases that no longer exist:', missingIds)
+          // Remove missing test case IDs
+          this.selectedTestCases = this.selectedTestCases.filter(id => allAvailableIds.includes(id))
+          console.log('Cleaned selected test cases:', this.selectedTestCases)
+        }
 
         // Force reactivity update for checkboxes after test suites are loaded
         this.$nextTick(() => {
