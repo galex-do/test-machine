@@ -199,10 +199,10 @@ func (r *RepositoryRepository) CreateOrUpdateSync(repo *models.Repository, branc
         for i := range branches {
                 branches[i].RepositoryID = repositoryID
                 err = tx.QueryRow(`
-                        INSERT INTO branches (repository_id, name, commit_hash, is_default)
-                        VALUES ($1, $2, $3, $4)
+                        INSERT INTO branches (repository_id, name, commit_hash, commit_date, commit_message, is_default)
+                        VALUES ($1, $2, $3, $4, $5, $6)
                         RETURNING id, created_at, updated_at
-                `, branches[i].RepositoryID, branches[i].Name, branches[i].CommitHash, branches[i].IsDefault).Scan(
+                `, branches[i].RepositoryID, branches[i].Name, branches[i].CommitHash, branches[i].CommitDate, branches[i].CommitMessage, branches[i].IsDefault).Scan(
                         &branches[i].ID, &branches[i].CreatedAt, &branches[i].UpdatedAt,
                 )
                 if err != nil {
@@ -214,10 +214,10 @@ func (r *RepositoryRepository) CreateOrUpdateSync(repo *models.Repository, branc
         for i := range tags {
                 tags[i].RepositoryID = repositoryID
                 err = tx.QueryRow(`
-                        INSERT INTO tags (repository_id, name, commit_hash)
-                        VALUES ($1, $2, $3)
+                        INSERT INTO tags (repository_id, name, commit_hash, commit_date, commit_message)
+                        VALUES ($1, $2, $3, $4, $5)
                         RETURNING id, created_at, updated_at
-                `, tags[i].RepositoryID, tags[i].Name, tags[i].CommitHash).Scan(
+                `, tags[i].RepositoryID, tags[i].Name, tags[i].CommitHash, tags[i].CommitDate, tags[i].CommitMessage).Scan(
                         &tags[i].ID, &tags[i].CreatedAt, &tags[i].UpdatedAt,
                 )
                 if err != nil {
@@ -247,7 +247,7 @@ func (r *RepositoryRepository) GetWithBranchesAndTags(repositoryID int) (*models
 
         // Get branches
         branchRows, err := r.db.Query(`
-                SELECT id, repository_id, name, commit_hash, is_default, created_at, updated_at
+                SELECT id, repository_id, name, commit_hash, commit_date, commit_message, is_default, created_at, updated_at
                 FROM branches WHERE repository_id = $1 ORDER BY is_default DESC, name
         `, repo.ID)
         if err != nil {
@@ -259,7 +259,7 @@ func (r *RepositoryRepository) GetWithBranchesAndTags(repositoryID int) (*models
                 var branch models.Branch
                 err = branchRows.Scan(
                         &branch.ID, &branch.RepositoryID, &branch.Name,
-                        &branch.CommitHash, &branch.IsDefault,
+                        &branch.CommitHash, &branch.CommitDate, &branch.CommitMessage, &branch.IsDefault,
                         &branch.CreatedAt, &branch.UpdatedAt,
                 )
                 if err != nil {
@@ -270,7 +270,7 @@ func (r *RepositoryRepository) GetWithBranchesAndTags(repositoryID int) (*models
 
         // Get tags
         tagRows, err := r.db.Query(`
-                SELECT id, repository_id, name, commit_hash, created_at, updated_at
+                SELECT id, repository_id, name, commit_hash, commit_date, commit_message, created_at, updated_at
                 FROM tags WHERE repository_id = $1 ORDER BY name DESC
         `, repo.ID)
         if err != nil {
@@ -282,7 +282,7 @@ func (r *RepositoryRepository) GetWithBranchesAndTags(repositoryID int) (*models
                 var tag models.Tag
                 err = tagRows.Scan(
                         &tag.ID, &tag.RepositoryID, &tag.Name,
-                        &tag.CommitHash, &tag.CreatedAt, &tag.UpdatedAt,
+                        &tag.CommitHash, &tag.CommitDate, &tag.CommitMessage, &tag.CreatedAt, &tag.UpdatedAt,
                 )
                 if err != nil {
                         return nil, fmt.Errorf("failed to scan tag: %w", err)

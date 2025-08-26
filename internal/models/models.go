@@ -197,23 +197,27 @@ type Repository struct {
 
 // Branch represents a Git branch in a repository
 type Branch struct {
-        ID           int       `json:"id"`
-        RepositoryID int       `json:"repository_id"`
-        Name         string    `json:"name"`
-        CommitHash   *string   `json:"commit_hash,omitempty"`
-        IsDefault    bool      `json:"is_default"`
-        CreatedAt    time.Time `json:"created_at"`
-        UpdatedAt    time.Time `json:"updated_at"`
+        ID            int        `json:"id"`
+        RepositoryID  int        `json:"repository_id"`
+        Name          string     `json:"name"`
+        CommitHash    *string    `json:"commit_hash,omitempty"`
+        CommitDate    *time.Time `json:"commit_date,omitempty"`
+        CommitMessage *string    `json:"commit_message,omitempty"`
+        IsDefault     bool       `json:"is_default"`
+        CreatedAt     time.Time  `json:"created_at"`
+        UpdatedAt     time.Time  `json:"updated_at"`
 }
 
 // Tag represents a Git tag in a repository
 type Tag struct {
-        ID           int       `json:"id"`
-        RepositoryID int       `json:"repository_id"`
-        Name         string    `json:"name"`
-        CommitHash   *string   `json:"commit_hash,omitempty"`
-        CreatedAt    time.Time `json:"created_at"`
-        UpdatedAt    time.Time `json:"updated_at"`
+        ID            int        `json:"id"`
+        RepositoryID  int        `json:"repository_id"`
+        Name          string     `json:"name"`
+        CommitHash    *string    `json:"commit_hash,omitempty"`
+        CommitDate    *time.Time `json:"commit_date,omitempty"`
+        CommitMessage *string    `json:"commit_message,omitempty"`
+        CreatedAt     time.Time  `json:"created_at"`
+        UpdatedAt     time.Time  `json:"updated_at"`
 }
 
 // CreateRepositoryRequest represents the request to create a new repository

@@ -5,6 +5,7 @@ import (
         "time"
 
         "github.com/go-git/go-git/v5"
+        "github.com/go-git/go-git/v5/plumbing"
         "github.com/go-git/go-git/v5/plumbing/transport"
         "github.com/go-git/go-git/v5/plumbing/transport/http"
         "github.com/go-git/go-git/v5/plumbing/transport/ssh"
@@ -108,18 +109,33 @@ func (s *GitService) SyncRepository(repositoryID int) (*models.SyncResponse, err
         for _, ref := range refs {
                 if ref.Name().IsBranch() {
                         branchName := ref.Name().Short()
+                        
+                        // Get commit information
+                        commitHash := ref.Hash().String()
+                        commitDate, commitMessage := s.getCommitInfo(repo, ref.Hash())
+                        
                         branches = append(branches, models.Branch{
-                                Name:       branchName,
-                                CommitHash: stringPtr(ref.Hash().String()),
-                                IsDefault:  branchName == "main" || branchName == "master",
+                                Name:          branchName,
+                                CommitHash:    stringPtr(commitHash),
+                                CommitDate:    commitDate,
+                                CommitMessage: commitMessage,
+                                IsDefault:     branchName == "main" || branchName == "master",
                         })
                         if branchName == "main" || (branchName == "master" && defaultBranch == "") {
                                 defaultBranch = branchName
                         }
                 } else if ref.Name().IsTag() {
+                        tagName := ref.Name().Short()
+                        
+                        // Get commit information
+                        commitHash := ref.Hash().String()
+                        commitDate, commitMessage := s.getCommitInfo(repo, ref.Hash())
+                        
                         tags = append(tags, models.Tag{
-                                Name:       ref.Name().Short(),
-                                CommitHash: stringPtr(ref.Hash().String()),
+                                Name:          tagName,
+                                CommitHash:    stringPtr(commitHash),
+                                CommitDate:    commitDate,
+                                CommitMessage: commitMessage,
                         })
                 }
         }
@@ -187,6 +203,19 @@ func (s *GitService) getAuthMethod(keyID int, repoURL string) (transport.AuthMet
 }
 
 // Helper functions
+// getCommitInfo retrieves commit date and message for a given commit hash
+func (s *GitService) getCommitInfo(repo *git.Repository, hash plumbing.Hash) (*time.Time, *string) {
+        commit, err := repo.CommitObject(hash)
+        if err != nil {
+                return nil, nil
+        }
+        
+        commitDate := commit.Author.When
+        commitMessage := commit.Message
+        
+        return &commitDate, &commitMessage
+}
+
 func stringPtr(s string) *string {
         return &s
 }

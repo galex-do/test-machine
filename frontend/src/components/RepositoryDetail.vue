@@ -119,8 +119,9 @@
                     <thead>
                       <tr>
                         <th>Branch Name</th>
-                        <th>Commit Hash</th>
-                        <th>Updated</th>
+                        <th>Latest Commit</th>
+                        <th>Date</th>
+                        <th>Message</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -140,7 +141,16 @@
                           <span v-else class="text-muted">-</span>
                         </td>
                         <td class="small text-muted">
-                          {{ formatDate(branch.updated_at) }}
+                          <span v-if="branch.commit_date">
+                            {{ formatDate(branch.commit_date) }}
+                          </span>
+                          <span v-else class="text-muted">-</span>
+                        </td>
+                        <td class="small">
+                          <span v-if="branch.commit_message" class="text-truncate" :title="branch.commit_message" style="max-width: 200px; display: inline-block;">
+                            {{ truncateMessage(branch.commit_message) }}
+                          </span>
+                          <span v-else class="text-muted">-</span>
                         </td>
                       </tr>
                     </tbody>
@@ -174,7 +184,8 @@
                       <tr>
                         <th>Tag Name</th>
                         <th>Commit Hash</th>
-                        <th>Created</th>
+                        <th>Date</th>
+                        <th>Message</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -189,7 +200,16 @@
                           <span v-else class="text-muted">-</span>
                         </td>
                         <td class="small text-muted">
-                          {{ formatDate(tag.created_at) }}
+                          <span v-if="tag.commit_date">
+                            {{ formatDate(tag.commit_date) }}
+                          </span>
+                          <span v-else class="text-muted">-</span>
+                        </td>
+                        <td class="small">
+                          <span v-if="tag.commit_message" class="text-truncate" :title="tag.commit_message" style="max-width: 200px; display: inline-block;">
+                            {{ truncateMessage(tag.commit_message) }}
+                          </span>
+                          <span v-else class="text-muted">-</span>
                         </td>
                       </tr>
                     </tbody>
@@ -263,6 +283,12 @@ export default {
     truncateHash(hash) {
       if (!hash) return '-'
       return hash.substring(0, 8)
+    },
+
+    truncateMessage(message) {
+      if (!message) return '-'
+      const firstLine = message.split('\n')[0]
+      return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine
     },
 
     async syncRepository() {
