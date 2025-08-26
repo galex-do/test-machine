@@ -13,15 +13,25 @@
     <!-- Project Header -->
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
       <div>
-        <h1 class="h2">{{ project?.name }}</h1>
-        <p class="text-muted">{{ project?.description || 'No description available' }}</p>
-        <p v-if="project?.git_project" class="text-muted">
-          <i class="fab fa-git-alt"></i> <strong>Git Project:</strong> 
-          <a :href="project.git_project" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
-            {{ project.git_project }} <i class="fas fa-external-link-alt ms-1"></i>
+        <h1 class="h2">
+          {{ project?.name }}
+          <a v-if="project?.repository" 
+             :href="project.repository.remote_url" 
+             target="_blank" 
+             rel="noopener noreferrer" 
+             class="ms-2 text-muted" 
+             :title="`Open Git repository: ${project.repository.remote_url}`">
+            <i class="fab fa-git-alt"></i>
           </a>
-          <span v-if="project?.key" class="ms-3">
-            <i class="fas fa-key"></i> <strong>Auth:</strong> {{ project.key.name }} ({{ project.key.key_type }})
+        </h1>
+        <p class="text-muted">{{ project?.description || 'No description available' }}</p>
+        <p v-if="project?.repository" class="text-muted">
+          <i class="fab fa-git-alt"></i> <strong>Git Repository:</strong> 
+          <a :href="project.repository.remote_url" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+            {{ project.repository.remote_url }} <i class="fas fa-external-link-alt ms-1"></i>
+          </a>
+          <span v-if="project.repository.key" class="ms-3">
+            <i class="fas fa-key"></i> <strong>Auth:</strong> {{ project.repository.key.name }} ({{ project.repository.key.key_type }})
           </span>
         </p>
       </div>
@@ -31,7 +41,7 @@
             <i class="fas fa-edit"></i> Edit Project
           </button>
           <button 
-            v-if="project?.git_project" 
+            v-if="project?.repository" 
             type="button" 
             class="btn btn-outline-info" 
             @click="syncProject"
@@ -259,20 +269,20 @@ export default {
     },
 
     async syncProject() {
-      if (!this.project?.git_project) {
+      if (!this.project?.repository) {
         showAlert('No Git repository configured for this project', 'warning')
         return
       }
 
       this.syncing = true
       try {
-        const response = await api.syncProject(this.project.id)
+        const response = await api.syncRepository(this.project.repository.id)
         if (response.success) {
           showAlert(`Git repository synced successfully! Found ${response.branch_count} branches and ${response.tag_count} tags.`, 'success')
           // Optionally reload project data to show updated sync status
           this.loadData()
         } else {
-          showAlert(`Sync failed: ${response.message}`, 'danger')
+          showAlert(`Sync failed: ${response.message}`, 'warning')
         }
       } catch (error) {
         showAlert('Error syncing Git repository: ' + error.message, 'danger')
