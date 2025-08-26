@@ -49,6 +49,8 @@
                 <th>Priority</th>
                 <th>Status</th>
                 <th>Steps</th>
+                <th>Created</th>
+                <th>Updated</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -72,6 +74,8 @@
                   </span>
                 </td>
                 <td>{{ testCase.test_steps_count || 0 }}</td>
+                <td>{{ formatDate(testCase.created_at) }}</td>
+                <td>{{ formatDate(testCase.updated_at) }}</td>
                 <td>
                   <div class="action-buttons">
                     <button class="btn btn-outline-primary btn-sm" @click="editTestCase(testCase)">
