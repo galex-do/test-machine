@@ -350,7 +350,7 @@ export default {
 
         // Load projects
         const projectsResponse = await api.getProjects()
-        this.projects = projectsResponse.data || []
+        this.projects = projectsResponse || []
 
         // If editing, load test run data
         if (this.isEditing) {
@@ -368,7 +368,7 @@ export default {
     async loadTestRun() {
       try {
         const response = await api.getTestRun(this.id)
-        const testRun = response.data
+        const testRun = response
 
         this.form = {
           name: testRun.name || '',
@@ -403,7 +403,7 @@ export default {
       try {
         // Load test suites for project
         const response = await api.getTestSuites(this.form.project_id)
-        this.testSuites = response.data || []
+        this.testSuites = response || []
 
         // Expand all suites by default when loading
         this.testSuites.forEach(suite => {
@@ -430,7 +430,7 @@ export default {
 
       try {
         const response = await api.getRepository(this.selectedProject.repository.id)
-        const repo = response.data
+        const repo = response
         
         if (this.gitReferenceType === 'branch') {
           this.gitReferences = repo.branches || []
