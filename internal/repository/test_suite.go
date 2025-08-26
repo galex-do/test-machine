@@ -32,7 +32,7 @@ func (r *TestSuiteRepository) GetAll(projectID *int) ([]models.TestSuite, error)
                         WHERE ts.project_id = $1
                         GROUP BY ts.id, ts.name, ts.description, ts.project_id, ts.created_at, ts.updated_at,
                                  p.id, p.name, p.description, p.created_at, p.updated_at
-                        ORDER BY ts.created_at DESC
+                        ORDER BY ts.created_at ASC
                 `
                 args = []interface{}{*projectID}
         } else {
@@ -45,7 +45,7 @@ func (r *TestSuiteRepository) GetAll(projectID *int) ([]models.TestSuite, error)
                         LEFT JOIN test_cases tc ON ts.id = tc.test_suite_id
                         GROUP BY ts.id, ts.name, ts.description, ts.project_id, ts.created_at, ts.updated_at,
                                  p.id, p.name, p.description, p.created_at, p.updated_at
-                        ORDER BY ts.created_at DESC
+                        ORDER BY ts.created_at ASC
                 `
         }
 
