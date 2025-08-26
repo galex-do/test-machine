@@ -52,22 +52,6 @@ type TestStep struct {
         UpdatedAt      time.Time `json:"updated_at"`
 }
 
-// TestRun represents an execution of a test case
-type TestRun struct {
-        ID          int        `json:"id"`
-        Name        string     `json:"name"`
-        Description string     `json:"description"`
-        TestCaseID  int        `json:"test_case_id"`
-        Status      string     `json:"status"`
-        Result      *string    `json:"result"`
-        Notes       *string    `json:"notes"`
-        ExecutedBy  *string    `json:"executed_by"`
-        StartedAt   *time.Time `json:"started_at"`
-        CompletedAt *time.Time `json:"completed_at"`
-        CreatedAt   time.Time  `json:"created_at"`
-        UpdatedAt   time.Time  `json:"updated_at"`
-        TestCase    *TestCase  `json:"test_case,omitempty"`
-}
 
 // CreateProjectRequest represents the request to create a new project
 type CreateProjectRequest struct {
@@ -128,21 +112,87 @@ type UpdateTestStepRequest struct {
         ExpectedResult string `json:"expected_result"`
 }
 
+// TestRun represents a collection of test cases to be executed
+type TestRun struct {
+        ID           int                `json:"id"`
+        Name         string             `json:"name"`
+        Description  string             `json:"description"`
+        ProjectID    int                `json:"project_id"`
+        RepositoryID *int               `json:"repository_id,omitempty"`
+        BranchName   *string            `json:"branch_name,omitempty"`
+        TagName      *string            `json:"tag_name,omitempty"`
+        Status       string             `json:"status"`
+        CreatedBy    *string            `json:"created_by,omitempty"`
+        StartedAt    *time.Time         `json:"started_at,omitempty"`
+        CompletedAt  *time.Time         `json:"completed_at,omitempty"`
+        CreatedAt    time.Time          `json:"created_at"`
+        UpdatedAt    time.Time          `json:"updated_at"`
+        Project      *Project           `json:"project,omitempty"`
+        Repository   *Repository        `json:"repository,omitempty"`
+        TestCases    []TestRunCase      `json:"test_cases,omitempty"`
+}
+
+// TestRunCase represents a test case within a test run
+type TestRunCase struct {
+        ID           int       `json:"id"`
+        TestRunID    int       `json:"test_run_id"`
+        TestCaseID   int       `json:"test_case_id"`
+        Status       string    `json:"status"`
+        ResultNotes  *string   `json:"result_notes,omitempty"`
+        ExecutedBy   *string   `json:"executed_by,omitempty"`
+        StartedAt    *time.Time `json:"started_at,omitempty"`
+        CompletedAt  *time.Time `json:"completed_at,omitempty"`
+        CreatedAt    time.Time `json:"created_at"`
+        UpdatedAt    time.Time `json:"updated_at"`
+        TestCase     *TestCase `json:"test_case,omitempty"`
+}
+
+// TestExecution represents an individual test execution (renamed from TestRun)
+type TestExecution struct {
+        ID             int        `json:"id"`
+        Name           string     `json:"name"`
+        Description    string     `json:"description"`
+        TestCaseID     int        `json:"test_case_id"`
+        TestRunCaseID  *int       `json:"test_run_case_id,omitempty"`
+        Status         string     `json:"status"`
+        Result         *string    `json:"result,omitempty"`
+        Notes          *string    `json:"notes,omitempty"`
+        ExecutedBy     *string    `json:"executed_by,omitempty"`
+        StartedAt      *time.Time `json:"started_at,omitempty"`
+        CompletedAt    *time.Time `json:"completed_at,omitempty"`
+        CreatedAt      time.Time  `json:"created_at"`
+        UpdatedAt      time.Time  `json:"updated_at"`
+        TestCase       *TestCase  `json:"test_case,omitempty"`
+}
+
 // CreateTestRunRequest represents the request to create a new test run
 type CreateTestRunRequest struct {
-        Name        string  `json:"name"`
-        Description string  `json:"description"`
-        TestCaseID  int     `json:"test_case_id"`
-        ExecutedBy  *string `json:"executed_by"`
+        Name         string   `json:"name"`
+        Description  string   `json:"description"`
+        ProjectID    int      `json:"project_id"`
+        RepositoryID *int     `json:"repository_id"`
+        BranchName   *string  `json:"branch_name"`
+        TagName      *string  `json:"tag_name"`
+        TestCaseIDs  []int    `json:"test_case_ids"`
+        CreatedBy    *string  `json:"created_by"`
 }
 
 // UpdateTestRunRequest represents the request to update a test run
 type UpdateTestRunRequest struct {
-        Status      *string    `json:"status"`
-        Result      *string    `json:"result"`
-        Notes       *string    `json:"notes"`
-        StartedAt   *time.Time `json:"started_at"`
-        CompletedAt *time.Time `json:"completed_at"`
+        Name        *string    `json:"name,omitempty"`
+        Description *string    `json:"description,omitempty"`
+        Status      *string    `json:"status,omitempty"`
+        StartedAt   *time.Time `json:"started_at,omitempty"`
+        CompletedAt *time.Time `json:"completed_at,omitempty"`
+}
+
+// UpdateTestRunCaseRequest represents the request to update a test case within a run
+type UpdateTestRunCaseRequest struct {
+        Status      *string    `json:"status,omitempty"`
+        ResultNotes *string    `json:"result_notes,omitempty"`
+        ExecutedBy  *string    `json:"executed_by,omitempty"`
+        StartedAt   *time.Time `json:"started_at,omitempty"`
+        CompletedAt *time.Time `json:"completed_at,omitempty"`
 }
 
 // Key represents an authentication key for Git repositories

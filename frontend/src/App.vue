@@ -17,6 +17,11 @@
               </router-link>
             </li>
             <li class="nav-item">
+              <router-link to="/test-runs" class="nav-link" :class="{ active: $route.name === 'TestRuns' }">
+                <i class="fas fa-play-circle"></i> Test Runs
+              </router-link>
+            </li>
+            <li class="nav-item">
               <router-link to="/reports" class="nav-link" :class="{ active: $route.name === 'Reports' }">
                 <i class="fas fa-chart-bar"></i> Reports
               </router-link>

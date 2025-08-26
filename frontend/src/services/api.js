@@ -66,6 +66,11 @@ export const api = {
   createTestRun: (data) => apiClient.post('/test-runs', data),
   updateTestRun: (id, data) => apiClient.put(`/test-runs/${id}`, data),
   deleteTestRun: (id) => apiClient.delete(`/test-runs/${id}`),
+  updateTestRunCase: (runId, caseId, data) => apiClient.put(`/test-runs/${runId}/cases/${caseId}`, data),
+
+  // Helper methods for test runs
+  getProjectsWithRepositories: () => apiClient.get('/projects'),
+  getTestSuitesByProject: (projectId) => apiClient.get(`/test-suites?project_id=${projectId}`),
 
   // Keys
   getKeys: () => apiClient.get('/keys'),

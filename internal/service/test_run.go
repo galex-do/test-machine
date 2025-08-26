@@ -1,41 +1,66 @@
 package service
 
 import (
-	"errors"
+        "fmt"
 
-	"github.com/galex-do/test-machine/internal/models"
-	"github.com/galex-do/test-machine/internal/repository"
+        "github.com/galex-do/test-machine/internal/models"
+        "github.com/galex-do/test-machine/internal/repository"
 )
 
 // TestRunService handles business logic for test runs
 type TestRunService struct {
-	repo *repository.TestRunRepository
+        repo        *repository.TestRunRepository
+        projectRepo *repository.ProjectRepository
 }
 
 // NewTestRunService creates a new test run service
-func NewTestRunService(repo *repository.TestRunRepository) *TestRunService {
-	return &TestRunService{repo: repo}
+func NewTestRunService(repo *repository.TestRunRepository, projectRepo *repository.ProjectRepository) *TestRunService {
+        return &TestRunService{
+                repo:        repo,
+                projectRepo: projectRepo,
+        }
 }
 
-// GetAll returns all test runs, optionally filtered by test case ID
-func (s *TestRunService) GetAll(testCaseID *int) ([]models.TestRun, error) {
-	return s.repo.GetAll(testCaseID)
+// GetAllTestRuns returns all test runs
+func (s *TestRunService) GetAllTestRuns() ([]models.TestRun, error) {
+        return s.repo.GetAll()
 }
 
-// GetByID returns a test run by ID
-func (s *TestRunService) GetByID(id int) (*models.TestRun, error) {
-	return s.repo.GetByID(id)
+// GetTestRunByID returns a test run by ID
+func (s *TestRunService) GetTestRunByID(id int) (*models.TestRun, error) {
+        return s.repo.GetByID(id)
 }
 
-// Create creates a new test run
-func (s *TestRunService) Create(req *models.CreateTestRunRequest) (*models.TestRun, error) {
-	if req.Name == "" || req.TestCaseID == 0 {
-		return nil, errors.New("name and test_case_id are required")
-	}
-	return s.repo.Create(req)
+// CreateTestRun creates a new test run
+func (s *TestRunService) CreateTestRun(req models.CreateTestRunRequest) (*models.TestRun, error) {
+        // Validate that the project exists
+        project, err := s.projectRepo.GetByID(req.ProjectID)
+        if err != nil {
+                return nil, err
+        }
+        if project == nil {
+                return nil, fmt.Errorf("project not found")
+        }
+
+        // Validate test case IDs if needed
+        if len(req.TestCaseIDs) == 0 {
+                return nil, fmt.Errorf("at least one test case must be selected")
+        }
+
+        return s.repo.Create(req)
 }
 
-// Update updates an existing test run
-func (s *TestRunService) Update(id int, req *models.UpdateTestRunRequest) (*models.TestRun, error) {
-	return s.repo.Update(id, req)
+// UpdateTestRun updates a test run
+func (s *TestRunService) UpdateTestRun(id int, req models.UpdateTestRunRequest) (*models.TestRun, error) {
+        return s.repo.Update(id, req)
+}
+
+// DeleteTestRun deletes a test run
+func (s *TestRunService) DeleteTestRun(id int) error {
+        return s.repo.Delete(id)
+}
+
+// UpdateTestRunCase updates a test case within a test run
+func (s *TestRunService) UpdateTestRunCase(testRunID, testCaseID int, req models.UpdateTestRunCaseRequest) (*models.TestRunCase, error) {
+        return s.repo.UpdateTestRunCase(testRunID, testCaseID, req)
 }

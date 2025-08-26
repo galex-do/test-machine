@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard.vue'
 import ProjectDetail from './components/ProjectDetail.vue'
 import TestSuiteDetail from './components/TestSuiteDetail.vue'
 import TestCaseDetail from './components/TestCaseDetail.vue'
+import TestRuns from './components/TestRuns.vue'
 import TestRunDetail from './components/TestRunDetail.vue'
 import Reports from './components/Reports.vue'
 import Repositories from './components/Repositories.vue'
@@ -22,6 +23,7 @@ const routes = [
   { path: '/project/:id', name: 'ProjectDetail', component: ProjectDetail, props: true },
   { path: '/project/:pid/test-suite/:sid', name: 'TestSuiteDetail', component: TestSuiteDetail, props: true },
   { path: '/project/:pid/test-suite/:sid/test-case/:cid', name: 'TestCaseDetail', component: TestCaseDetail, props: true },
+  { path: '/test-runs', name: 'TestRuns', component: TestRuns },
   { path: '/test-run/:id', name: 'TestRunDetail', component: TestRunDetail, props: true },
   { path: '/reports', name: 'Reports', component: Reports },
   { path: '/repositories', name: 'Repositories', component: Repositories },

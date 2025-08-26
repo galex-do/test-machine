@@ -41,18 +41,7 @@ func (h *Handler) testRunAPIHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getAllTestRuns(w http.ResponseWriter, r *http.Request) {
-        var testCaseID *int
-        testCaseIDStr := r.URL.Query().Get("test_case_id")
-        if testCaseIDStr != "" {
-                id, err := strconv.Atoi(testCaseIDStr)
-                if err != nil {
-                        h.writeJSONError(w, "Invalid test_case_id", http.StatusBadRequest)
-                        return
-                }
-                testCaseID = &id
-        }
-
-        testRuns, err := h.testRunService.GetAll(testCaseID)
+        testRuns, err := h.testRunService.GetAllTestRuns()
         if err != nil {
                 h.writeJSONError(w, "Database error", http.StatusInternalServerError)
                 return
@@ -62,7 +51,7 @@ func (h *Handler) getAllTestRuns(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getTestRun(w http.ResponseWriter, r *http.Request, id int) {
-        testRun, err := h.testRunService.GetByID(id)
+        testRun, err := h.testRunService.GetTestRunByID(id)
         if err != nil {
                 h.writeJSONError(w, "Database error", http.StatusInternalServerError)
                 return
@@ -83,7 +72,7 @@ func (h *Handler) createTestRun(w http.ResponseWriter, r *http.Request) {
                 return
         }
 
-        testRun, err := h.testRunService.Create(&req)
+        testRun, err := h.testRunService.CreateTestRun(req)
         if err != nil {
                 h.writeJSONError(w, err.Error(), http.StatusBadRequest)
                 return
@@ -99,7 +88,7 @@ func (h *Handler) updateTestRun(w http.ResponseWriter, r *http.Request, id int) 
                 return
         }
 
-        testRun, err := h.testRunService.Update(id, &req)
+        testRun, err := h.testRunService.UpdateTestRun(id, req)
         if err != nil {
                 h.writeJSONError(w, err.Error(), http.StatusBadRequest)
                 return

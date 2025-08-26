@@ -65,7 +65,7 @@ func main() {
         projectService := service.NewProjectService(projectRepo)
         testSuiteService := service.NewTestSuiteService(testSuiteRepo)
         testCaseService := service.NewTestCaseService(testCaseRepo)
-        testRunService := service.NewTestRunService(testRunRepo)
+        testRunService := service.NewTestRunService(testRunRepo, projectRepo)
         keyService := service.NewKeyService(keyRepo, encryptionService)
         gitService := service.NewGitService(projectRepo, repositoryRepo, keyRepo, encryptionService)
 

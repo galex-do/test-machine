@@ -51,6 +51,7 @@ func (h *Handler) SetupRoutes() http.Handler {
         mux.HandleFunc("/api/test-cases/", h.testCaseAPIHandler)
         mux.HandleFunc("/api/test-runs", h.testRunsAPIHandler)
         mux.HandleFunc("/api/test-runs/", h.testRunAPIHandler)
+        mux.HandleFunc("PUT /api/test-runs/{runId}/cases/{caseId}", h.updateTestRunCase)
         mux.HandleFunc("/api/test-steps/", h.testStepAPIHandler)
         mux.HandleFunc("/api/keys", h.keyAPIHandler)
         mux.HandleFunc("/api/keys/", h.keyByIDAPIHandler)
@@ -124,7 +125,7 @@ func (h *Handler) statsAPIHandler(w http.ResponseWriter, r *http.Request) {
                 return
         }
 
-        testRuns, err := h.testRunService.GetAll(nil)
+        testRuns, err := h.testRunService.GetAllTestRuns()
         if err != nil {
                 h.writeJSONError(w, "Error fetching test runs", http.StatusInternalServerError)
                 return
