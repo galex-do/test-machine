@@ -587,13 +587,18 @@ export default {
     },
 
     toggleTestCase(testCaseId) {
+      console.log('Toggling test case:', testCaseId)
+      console.log('Current selected before toggle:', [...this.selectedTestCases])
+      
       const index = this.selectedTestCases.indexOf(testCaseId)
       if (index > -1) {
         // Remove test case
         this.selectedTestCases.splice(index, 1)
+        console.log('Removed test case, new selection:', [...this.selectedTestCases])
       } else {
         // Add test case
         this.selectedTestCases.push(testCaseId)
+        console.log('Added test case, new selection:', [...this.selectedTestCases])
       }
     },
 
