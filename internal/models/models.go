@@ -176,3 +176,56 @@ type UpdateKeyRequest struct {
         Username    *string `json:"username"`
         SecretData  *string `json:"secret_data,omitempty"` // Optional - only if changing
 }
+
+// KeyDecryptResponse represents the decrypted key data
+type KeyDecryptResponse struct {
+        Data string `json:"data"`
+}
+
+// Repository represents a Git repository synced with a project
+type Repository struct {
+        ID            int       `json:"id"`
+        ProjectID     int       `json:"project_id"`
+        RemoteURL     string    `json:"remote_url"`
+        DefaultBranch *string   `json:"default_branch,omitempty"`
+        SyncedAt      *time.Time `json:"synced_at,omitempty"`
+        CreatedAt     time.Time `json:"created_at"`
+        UpdatedAt     time.Time `json:"updated_at"`
+        Branches      []Branch  `json:"branches,omitempty"`
+        Tags          []Tag     `json:"tags,omitempty"`
+}
+
+// Branch represents a Git branch in a repository
+type Branch struct {
+        ID           int       `json:"id"`
+        RepositoryID int       `json:"repository_id"`
+        Name         string    `json:"name"`
+        CommitHash   *string   `json:"commit_hash,omitempty"`
+        IsDefault    bool      `json:"is_default"`
+        CreatedAt    time.Time `json:"created_at"`
+        UpdatedAt    time.Time `json:"updated_at"`
+}
+
+// Tag represents a Git tag in a repository
+type Tag struct {
+        ID           int       `json:"id"`
+        RepositoryID int       `json:"repository_id"`
+        Name         string    `json:"name"`
+        CommitHash   *string   `json:"commit_hash,omitempty"`
+        CreatedAt    time.Time `json:"created_at"`
+        UpdatedAt    time.Time `json:"updated_at"`
+}
+
+// SyncRequest represents a request to sync a project with its Git repository
+type SyncRequest struct {
+        ProjectID int `json:"project_id"`
+}
+
+// SyncResponse represents the response from a sync operation
+type SyncResponse struct {
+        Success      bool       `json:"success"`
+        Message      string     `json:"message"`
+        Repository   *Repository `json:"repository,omitempty"`
+        BranchCount  int        `json:"branch_count"`
+        TagCount     int        `json:"tag_count"`
+}

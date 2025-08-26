@@ -30,6 +30,15 @@
           <button type="button" class="btn btn-outline-secondary" @click="editProject">
             <i class="fas fa-edit"></i> Edit Project
           </button>
+          <button 
+            v-if="project?.git_project" 
+            type="button" 
+            class="btn btn-outline-info" 
+            @click="syncProject"
+            :disabled="syncing">
+            <i class="fas fa-sync-alt" :class="{ 'fa-spin': syncing }"></i> 
+            {{ syncing ? 'Syncing...' : 'Sync Git' }}
+          </button>
         </div>
         <button type="button" class="btn btn-primary" @click="showCreateTestSuiteModal">
           <i class="fas fa-plus"></i> New Test Suite
@@ -158,7 +167,8 @@ export default {
       loading: true,
       showTestSuiteModal: false,
       showProjectModal: false,
-      selectedTestSuite: null
+      selectedTestSuite: null,
+      syncing: false
     }
   },
   computed: {
@@ -245,6 +255,29 @@ export default {
         this.loadData()
       } catch (error) {
         showAlert('Error deleting test suite: ' + error.message, 'danger')
+      }
+    },
+
+    async syncProject() {
+      if (!this.project?.git_project) {
+        showAlert('No Git repository configured for this project', 'warning')
+        return
+      }
+
+      this.syncing = true
+      try {
+        const response = await api.syncProject(this.project.id)
+        if (response.success) {
+          showAlert(`Git repository synced successfully! Found ${response.branch_count} branches and ${response.tag_count} tags.`, 'success')
+          // Optionally reload project data to show updated sync status
+          this.loadData()
+        } else {
+          showAlert(`Sync failed: ${response.message}`, 'danger')
+        }
+      } catch (error) {
+        showAlert('Error syncing Git repository: ' + error.message, 'danger')
+      } finally {
+        this.syncing = false
       }
     }
   }

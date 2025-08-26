@@ -2,7 +2,9 @@ package handlers
 
 import (
         "encoding/json"
+        "fmt"
         "net/http"
+        "strconv"
 
         "github.com/galex-do/test-machine/internal/service"
 )
@@ -14,16 +16,18 @@ type Handler struct {
         testCaseService  *service.TestCaseService
         testRunService   *service.TestRunService
         keyService       *service.KeyService
+        gitService       *service.GitService
 }
 
 // NewHandler creates a new handler
-func NewHandler(projectService *service.ProjectService, testSuiteService *service.TestSuiteService, testCaseService *service.TestCaseService, testRunService *service.TestRunService, keyService *service.KeyService) *Handler {
+func NewHandler(projectService *service.ProjectService, testSuiteService *service.TestSuiteService, testCaseService *service.TestCaseService, testRunService *service.TestRunService, keyService *service.KeyService, gitService *service.GitService) *Handler {
         return &Handler{
                 projectService:   projectService,
                 testSuiteService: testSuiteService,
                 testCaseService:  testCaseService,
                 testRunService:   testRunService,
                 keyService:       keyService,
+                gitService:       gitService,
         }
 }
 
@@ -43,6 +47,7 @@ func (h *Handler) SetupRoutes() http.Handler {
         mux.HandleFunc("/api/test-steps/", h.testStepAPIHandler)
         mux.HandleFunc("/api/keys", h.keyAPIHandler)
         mux.HandleFunc("/api/keys/", h.keyByIDAPIHandler)
+        mux.HandleFunc("/api/sync/", h.syncAPIHandler)
         mux.HandleFunc("/api/stats", h.statsAPIHandler)
 
         // Add CORS middleware
@@ -121,4 +126,34 @@ func (h *Handler) statsAPIHandler(w http.ResponseWriter, r *http.Request) {
         }
 
         h.writeJSONResponse(w, stats)
+}
+
+// syncAPIHandler handles sync-related API requests
+func (h *Handler) syncAPIHandler(w http.ResponseWriter, r *http.Request) {
+        // Parse the URL to extract project ID and action
+        path := r.URL.Path
+        
+        // Handle /api/sync/projects/{id}/sync
+        if r.Method == "POST" {
+                var projectIDStr string
+                if n, _ := fmt.Sscanf(path, "/api/sync/projects/%s/sync", &projectIDStr); n == 1 {
+                        projectID, err := strconv.Atoi(projectIDStr)
+                        if err != nil {
+                                h.writeJSONError(w, "Invalid project ID", http.StatusBadRequest)
+                                return
+                        }
+
+                        // Perform sync
+                        response, err := h.gitService.SyncProjectRepository(projectID)
+                        if err != nil {
+                                h.writeJSONError(w, fmt.Sprintf("Sync failed: %v", err), http.StatusInternalServerError)
+                                return
+                        }
+
+                        h.writeJSONResponse(w, response)
+                        return
+                }
+        }
+
+        h.writeJSONError(w, "Not found", http.StatusNotFound)
 }

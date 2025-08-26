@@ -77,7 +77,10 @@ export const api = {
 
   // Stats and Reports
   getStats: () => apiClient.get('/stats'),
-  getReports: () => apiClient.get('/reports')
+  getReports: () => apiClient.get('/reports'),
+
+  // Sync
+  syncProject: (projectId) => apiClient.post(`/sync/projects/${projectId}/sync`)
 }
 
 export default api

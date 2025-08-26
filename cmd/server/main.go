@@ -59,6 +59,7 @@ func main() {
         testCaseRepo := repository.NewTestCaseRepository(db)
         testRunRepo := repository.NewTestRunRepository(db)
         keyRepo := repository.NewKeyRepository(db)
+        repositoryRepo := repository.NewRepositoryRepository(db)
 
         // Initialize services
         projectService := service.NewProjectService(projectRepo)
@@ -66,9 +67,10 @@ func main() {
         testCaseService := service.NewTestCaseService(testCaseRepo)
         testRunService := service.NewTestRunService(testRunRepo)
         keyService := service.NewKeyService(keyRepo, encryptionService)
+        gitService := service.NewGitService(projectRepo, repositoryRepo, keyRepo, encryptionService)
 
         // Initialize handlers
-        handler := handlers.NewHandler(projectService, testSuiteService, testCaseService, testRunService, keyService)
+        handler := handlers.NewHandler(projectService, testSuiteService, testCaseService, testRunService, keyService, gitService)
 
         // Setup routes
         mux := handler.SetupRoutes()
