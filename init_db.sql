@@ -1,12 +1,67 @@
 -- Test Management Platform Database Schema
+-- Updated to reflect current database structure
 
--- Projects table
+-- Keys table for authentication credentials
+CREATE TABLE IF NOT EXISTS keys (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    key_type VARCHAR(255) NOT NULL,
+    username VARCHAR(255),
+    encrypted_data TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Repositories table for Git repository management
+CREATE TABLE IF NOT EXISTS repositories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL DEFAULT 'Untitled Repository',
+    description TEXT DEFAULT '',
+    remote_url VARCHAR(255) NOT NULL,
+    key_id INTEGER REFERENCES keys(id) ON DELETE SET NULL,
+    default_branch VARCHAR(255),
+    synced_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_repository_url UNIQUE (remote_url)
+);
+
+-- Projects table (updated with repository reference)
 CREATE TABLE IF NOT EXISTS projects (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
+    repository_id INTEGER REFERENCES repositories(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Branches table for Git branch tracking
+CREATE TABLE IF NOT EXISTS branches (
+    id SERIAL PRIMARY KEY,
+    repository_id INTEGER NOT NULL REFERENCES repositories(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    commit_hash VARCHAR(255),
+    commit_date TIMESTAMP,
+    commit_message TEXT,
+    is_default BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT branches_repository_id_name_key UNIQUE (repository_id, name)
+);
+
+-- Tags table for Git tag tracking
+CREATE TABLE IF NOT EXISTS tags (
+    id SERIAL PRIMARY KEY,
+    repository_id INTEGER NOT NULL REFERENCES repositories(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    commit_hash VARCHAR(255),
+    commit_date TIMESTAMP,
+    commit_message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT tags_repository_id_name_key UNIQUE (repository_id, name)
 );
 
 -- Test Suites table
@@ -40,7 +95,7 @@ CREATE TABLE IF NOT EXISTS test_steps (
     expected_result TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(test_case_id, step_number)
+    CONSTRAINT test_steps_test_case_id_step_number_key UNIQUE(test_case_id, step_number)
 );
 
 -- Test Runs table
@@ -60,11 +115,16 @@ CREATE TABLE IF NOT EXISTS test_runs (
 );
 
 -- Indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_repositories_key_id ON repositories(key_id);
+CREATE INDEX IF NOT EXISTS idx_projects_repository_id ON projects(repository_id);
+CREATE INDEX IF NOT EXISTS idx_branches_repository_id ON branches(repository_id);
+CREATE INDEX IF NOT EXISTS idx_tags_repository_id ON tags(repository_id);
 CREATE INDEX IF NOT EXISTS idx_test_suites_project_id ON test_suites(project_id);
 CREATE INDEX IF NOT EXISTS idx_test_cases_test_suite_id ON test_cases(test_suite_id);
 CREATE INDEX IF NOT EXISTS idx_test_steps_test_case_id ON test_steps(test_case_id);
 CREATE INDEX IF NOT EXISTS idx_test_runs_test_case_id ON test_runs(test_case_id);
 CREATE INDEX IF NOT EXISTS idx_projects_name ON projects(name);
+CREATE INDEX IF NOT EXISTS idx_repositories_name ON repositories(name);
 CREATE INDEX IF NOT EXISTS idx_test_cases_status ON test_cases(status);
 CREATE INDEX IF NOT EXISTS idx_test_runs_status ON test_runs(status);
 
