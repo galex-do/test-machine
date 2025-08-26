@@ -448,7 +448,9 @@ export default {
         // Load test suites for project
         const response = await api.getTestSuites(this.form.project_id)
         console.log('Raw API response for test suites:', response)
-        this.testSuites = response || []
+        
+        // Deep clone to preserve test_cases arrays
+        this.testSuites = JSON.parse(JSON.stringify(response || []))
         console.log('Test suites after assignment:', this.testSuites)
 
         // Expand all suites by default when loading
