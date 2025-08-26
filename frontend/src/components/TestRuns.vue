@@ -5,12 +5,12 @@
       <h2>
         <i class="fas fa-play-circle text-primary"></i> Test Runs
       </h2>
-      <button 
-        @click="createTestRun" 
+      <router-link 
+        to="/test-runs/new" 
         class="btn btn-primary"
       >
         <i class="fas fa-plus"></i> New Test Run
-      </button>
+      </router-link>
     </div>
 
     <!-- Loading State -->
@@ -55,9 +55,9 @@
             <i class="fas fa-inbox fa-3x mb-3"></i>
             <h5>No test runs found</h5>
             <p>Create your first test run to start testing your projects.</p>
-            <button @click="createTestRun" class="btn btn-primary mt-2">
+            <router-link to="/test-runs/new" class="btn btn-primary mt-2">
               <i class="fas fa-plus"></i> Create Test Run
-            </button>
+            </router-link>
           </div>
 
           <div v-else class="table-responsive">
@@ -119,13 +119,14 @@
                       >
                         <i class="fas fa-eye"></i>
                       </button>
-                      <button 
-                        @click.stop="editTestRun(testRun.id)" 
+                      <router-link 
+                        :to="`/test-runs/${testRun.id}/edit`"
                         class="btn btn-outline-secondary"
                         title="Edit"
+                        @click.stop
                       >
                         <i class="fas fa-edit"></i>
-                      </button>
+                      </router-link>
                     </div>
                   </td>
                 </tr>
@@ -136,35 +137,22 @@
       </div>
     </div>
 
-    <!-- Create/Edit Test Run Modal -->
-    <TestRunModal 
-      :show="showModal" 
-      :testRun="selectedTestRun"
-      @close="closeModal"
-      @saved="handleTestRunSaved"
-    />
   </div>
 </template>
 
 <script>
 import api from '../services/api.js'
 import { formatDate, showAlert } from '../utils/helpers.js'
-import TestRunModal from './modals/TestRunModal.vue'
 
 export default {
   name: 'TestRuns',
-  components: {
-    TestRunModal
-  },
   data() {
     return {
       testRuns: [],
       loading: true,
       error: null,
       searchQuery: '',
-      statusFilter: '',
-      showModal: false,
-      selectedTestRun: null
+      statusFilter: ''
     }
   },
   computed: {
@@ -209,30 +197,8 @@ export default {
       }
     },
 
-    createTestRun() {
-      this.selectedTestRun = null
-      this.showModal = true
-    },
-
-    editTestRun(id) {
-      const testRun = this.testRuns.find(run => run.id === id)
-      this.selectedTestRun = testRun
-      this.showModal = true
-    },
-
     viewTestRun(id) {
       this.$router.push(`/test-run/${id}`)
-    },
-
-    closeModal() {
-      this.showModal = false
-      this.selectedTestRun = null
-    },
-
-    handleTestRunSaved() {
-      this.closeModal()
-      this.loadTestRuns()
-      showAlert('Test run saved successfully!', 'success')
     },
 
     getStatusBadgeClass(status) {
