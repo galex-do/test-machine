@@ -24,6 +24,7 @@ type TestSuite struct {
         UpdatedAt     time.Time `json:"updated_at"`
         Project       *Project  `json:"project,omitempty"`
         TestCasesCount int      `json:"test_cases_count,omitempty"`
+        TestCases     []TestCase `json:"test_cases,omitempty"`
 }
 
 // TestCase represents an individual test case

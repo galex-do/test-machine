@@ -71,6 +71,17 @@ func (r *TestSuiteRepository) GetAll(projectID *int) ([]models.TestSuite, error)
                 testSuites = append(testSuites, ts)
         }
 
+        // Load test cases for each test suite when filtering by project (for test run creation)
+        if projectID != nil {
+                for i := range testSuites {
+                        testCases, err := r.getTestCasesByTestSuite(testSuites[i].ID)
+                        if err != nil {
+                                return nil, err
+                        }
+                        testSuites[i].TestCases = testCases
+                }
+        }
+
         return testSuites, nil
 }
 
@@ -155,4 +166,32 @@ func (r *TestSuiteRepository) Delete(id int) error {
         }
 
         return nil
+}
+
+// getTestCasesByTestSuite loads test cases for a specific test suite
+func (r *TestSuiteRepository) getTestCasesByTestSuite(testSuiteID int) ([]models.TestCase, error) {
+        query := `
+                SELECT id, title, description, priority, status, test_suite_id, created_at, updated_at
+                FROM test_cases
+                WHERE test_suite_id = $1
+                ORDER BY title
+        `
+
+        rows, err := r.db.Query(query, testSuiteID)
+        if err != nil {
+                return nil, err
+        }
+        defer rows.Close()
+
+        var testCases []models.TestCase
+        for rows.Next() {
+                var tc models.TestCase
+                err = rows.Scan(&tc.ID, &tc.Title, &tc.Description, &tc.Priority, &tc.Status, &tc.TestSuiteID, &tc.CreatedAt, &tc.UpdatedAt)
+                if err != nil {
+                        return nil, err
+                }
+                testCases = append(testCases, tc)
+        }
+
+        return testCases, nil
 }
