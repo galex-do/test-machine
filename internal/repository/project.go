@@ -38,7 +38,8 @@ func (r *ProjectRepository) GetAll() ([]models.Project, error) {
         var projects []models.Project
         for rows.Next() {
                 var p models.Project
-                var repoID, repoName, repoURL, keyID, keyName, keyType sql.NullString
+                var repoID, keyID sql.NullInt64
+                var repoName, repoURL, keyName, keyType sql.NullString
                 err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.RepositoryID, &p.CreatedAt, &p.UpdatedAt, &p.TestSuitesCount, &repoID, &repoName, &repoURL, &keyID, &keyName, &keyType)
                 if err != nil {
                         return nil, err
@@ -46,24 +47,18 @@ func (r *ProjectRepository) GetAll() ([]models.Project, error) {
                 
                 // Set repository information if available
                 if repoID.Valid {
-                        var rid int
-                        if err := repoID.Scan(&rid); err == nil {
-                                p.Repository = &models.Repository{
-                                        ID:        rid,
-                                        Name:      repoName.String,
-                                        RemoteURL: repoURL.String,
-                                }
-                                
-                                // Set key information if available
-                                if keyID.Valid {
-                                        var kid int
-                                        if err := keyID.Scan(&kid); err == nil {
-                                                p.Repository.Key = &models.Key{
-                                                        ID:      kid,
-                                                        Name:    keyName.String,
-                                                        KeyType: keyType.String,
-                                                }
-                                        }
+                        p.Repository = &models.Repository{
+                                ID:        int(repoID.Int64),
+                                Name:      repoName.String,
+                                RemoteURL: repoURL.String,
+                        }
+                        
+                        // Set key information if available
+                        if keyID.Valid {
+                                p.Repository.Key = &models.Key{
+                                        ID:      int(keyID.Int64),
+                                        Name:    keyName.String,
+                                        KeyType: keyType.String,
                                 }
                         }
                 }
@@ -77,7 +72,8 @@ func (r *ProjectRepository) GetAll() ([]models.Project, error) {
 // GetByID returns a project by ID with test suite count
 func (r *ProjectRepository) GetByID(id int) (*models.Project, error) {
         var project models.Project
-        var repoID, repoName, repoURL, keyID, keyName, keyType sql.NullString
+        var repoID, keyID sql.NullInt64
+        var repoName, repoURL, keyName, keyType sql.NullString
         err := r.db.QueryRow(`
                 SELECT p.id, p.name, p.description, p.repository_id, p.created_at, p.updated_at,
                        COALESCE(COUNT(ts.id), 0) as test_suites_count,
@@ -92,24 +88,18 @@ func (r *ProjectRepository) GetByID(id int) (*models.Project, error) {
         `, id).Scan(&project.ID, &project.Name, &project.Description, &project.RepositoryID, &project.CreatedAt, &project.UpdatedAt, &project.TestSuitesCount, &repoID, &repoName, &repoURL, &keyID, &keyName, &keyType)
 
         if err == nil && repoID.Valid {
-                var rid int
-                if err := repoID.Scan(&rid); err == nil {
-                        project.Repository = &models.Repository{
-                                ID:        rid,
-                                Name:      repoName.String,
-                                RemoteURL: repoURL.String,
-                        }
-                        
-                        // Set key information if available
-                        if keyID.Valid {
-                                var kid int
-                                if err := keyID.Scan(&kid); err == nil {
-                                        project.Repository.Key = &models.Key{
-                                                ID:      kid,
-                                                Name:    keyName.String,
-                                                KeyType: keyType.String,
-                                        }
-                                }
+                project.Repository = &models.Repository{
+                        ID:        int(repoID.Int64),
+                        Name:      repoName.String,
+                        RemoteURL: repoURL.String,
+                }
+                
+                // Set key information if available
+                if keyID.Valid {
+                        project.Repository.Key = &models.Key{
+                                ID:      int(keyID.Int64),
+                                Name:    keyName.String,
+                                KeyType: keyType.String,
                         }
                 }
         }
