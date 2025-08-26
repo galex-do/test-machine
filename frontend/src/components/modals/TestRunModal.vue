@@ -24,14 +24,15 @@
               <!-- Basic Information -->
               <div class="col-md-6">
                 <div class="mb-3">
-                  <label for="name" class="form-label">Name *</label>
+                  <label for="name" class="form-label">Name</label>
                   <input
                     type="text"
                     class="form-control"
                     id="name"
                     v-model="form.name"
-                    required
+                    placeholder="Auto-generated if left empty"
                   >
+                  <div class="form-text">If left empty, name will be auto-generated as: &lt;project&gt;-&lt;branch/tag&gt;-&lt;datetime&gt;</div>
                 </div>
 
                 <div class="mb-3">
@@ -278,7 +279,7 @@ export default {
       return this.projects.find(p => p.id === this.form.project_id)
     },
     isFormValid() {
-      return this.form.name && this.form.project_id && this.selectedTestCases.length > 0
+      return this.form.project_id && this.selectedTestCases.length > 0
     }
   },
   watch: {

@@ -2,6 +2,7 @@ package service
 
 import (
         "fmt"
+        "time"
 
         "github.com/galex-do/test-machine/internal/models"
         "github.com/galex-do/test-machine/internal/repository"
@@ -47,6 +48,11 @@ func (s *TestRunService) CreateTestRun(req models.CreateTestRunRequest) (*models
                 return nil, fmt.Errorf("at least one test case must be selected")
         }
 
+        // Auto-generate name if empty
+        if req.Name == "" {
+                req.Name = s.generateTestRunName(project, req.BranchName, req.TagName)
+        }
+
         return s.repo.Create(req)
 }
 
@@ -63,4 +69,23 @@ func (s *TestRunService) DeleteTestRun(id int) error {
 // UpdateTestRunCase updates a test case within a test run
 func (s *TestRunService) UpdateTestRunCase(testRunID, testCaseID int, req models.UpdateTestRunCaseRequest) (*models.TestRunCase, error) {
         return s.repo.UpdateTestRunCase(testRunID, testCaseID, req)
+}
+
+// generateTestRunName creates an auto-generated name for test runs
+func (s *TestRunService) generateTestRunName(project *models.Project, branchName, tagName *string) string {
+        name := project.Name
+        
+        // Add branch or tag if specified
+        if branchName != nil && *branchName != "" {
+                name += "-" + *branchName
+        } else if tagName != nil && *tagName != "" {
+                name += "-" + *tagName
+        }
+        
+        // Add datetime (format: YYYY-MM-DD-HHMMSS)
+        now := time.Now()
+        datetime := now.Format("2006-01-02-150405")
+        name += "-" + datetime
+        
+        return name
 }
