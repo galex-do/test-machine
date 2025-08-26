@@ -169,14 +169,18 @@ export default {
   },
   computed: {
     filteredTestRuns() {
-      let filtered = this.testRuns
+      if (!this.testRuns || !Array.isArray(this.testRuns)) {
+        return []
+      }
+
+      let filtered = [...this.testRuns]
 
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase()
         filtered = filtered.filter(run => 
-          run.name.toLowerCase().includes(query) ||
-          run.description?.toLowerCase().includes(query) ||
-          run.project?.name?.toLowerCase().includes(query)
+          (run.name || '').toLowerCase().includes(query) ||
+          (run.description || '').toLowerCase().includes(query) ||
+          (run.project?.name || '').toLowerCase().includes(query)
         )
       }
 
@@ -242,11 +246,11 @@ export default {
     },
 
     getProgressBarClass(testRun) {
-      if (!testRun.test_cases || testRun.test_cases.length === 0) return 'bg-secondary'
+      if (!testRun || !testRun.test_cases || !Array.isArray(testRun.test_cases) || testRun.test_cases.length === 0) return 'bg-secondary'
       
       const total = testRun.test_cases.length
-      const passed = testRun.test_cases.filter(tc => tc.status === 'Pass').length
-      const failed = testRun.test_cases.filter(tc => tc.status === 'Fail').length
+      const passed = testRun.test_cases.filter(tc => tc && tc.status === 'Pass').length
+      const failed = testRun.test_cases.filter(tc => tc && tc.status === 'Fail').length
       
       if (failed > 0) return 'bg-danger'
       if (passed === total) return 'bg-success'
@@ -254,19 +258,19 @@ export default {
     },
 
     getProgressPercentage(testRun) {
-      if (!testRun.test_cases || testRun.test_cases.length === 0) return 0
+      if (!testRun || !testRun.test_cases || !Array.isArray(testRun.test_cases) || testRun.test_cases.length === 0) return 0
       
       const total = testRun.test_cases.length
-      const executed = testRun.test_cases.filter(tc => tc.status !== 'Not Executed').length
+      const executed = testRun.test_cases.filter(tc => tc && tc.status && tc.status !== 'Not Executed').length
       
       return Math.round((executed / total) * 100)
     },
 
     getProgressText(testRun) {
-      if (!testRun.test_cases || testRun.test_cases.length === 0) return '0/0'
+      if (!testRun || !testRun.test_cases || !Array.isArray(testRun.test_cases) || testRun.test_cases.length === 0) return '0/0'
       
       const total = testRun.test_cases.length
-      const executed = testRun.test_cases.filter(tc => tc.status !== 'Not Executed').length
+      const executed = testRun.test_cases.filter(tc => tc && tc.status && tc.status !== 'Not Executed').length
       
       return `${executed}/${total}`
     }

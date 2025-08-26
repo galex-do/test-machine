@@ -327,7 +327,10 @@ export default {
     },
 
     getActiveTestCases(suite) {
-      return suite.test_cases?.filter(tc => tc.status === 'Active') || []
+      if (!suite || !suite.test_cases || !Array.isArray(suite.test_cases)) {
+        return []
+      }
+      return suite.test_cases.filter(tc => tc && tc.status === 'Active')
     },
 
     toggleSuite(suite) {
