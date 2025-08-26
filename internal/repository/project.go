@@ -19,14 +19,15 @@ func NewProjectRepository(db *sql.DB) *ProjectRepository {
 // GetAll returns all projects with test suite counts
 func (r *ProjectRepository) GetAll() ([]models.Project, error) {
         rows, err := r.db.Query(`
-                SELECT p.id, p.name, p.description, p.git_project, p.key_id, p.created_at, p.updated_at, 
+                SELECT p.id, p.name, p.description, p.repository_id, p.created_at, p.updated_at, 
                        COALESCE(COUNT(ts.id), 0) as test_suites_count,
-                       k.id, k.name, k.key_type
+                       r.id, r.name, r.remote_url, k.id, k.name, k.key_type
                 FROM projects p
                 LEFT JOIN test_suites ts ON p.id = ts.project_id
-                LEFT JOIN keys k ON p.key_id = k.id
-                GROUP BY p.id, p.name, p.description, p.git_project, p.key_id, p.created_at, p.updated_at,
-                         k.id, k.name, k.key_type
+                LEFT JOIN repositories r ON p.repository_id = r.id
+                LEFT JOIN keys k ON r.key_id = k.id
+                GROUP BY p.id, p.name, p.description, p.repository_id, p.created_at, p.updated_at,
+                         r.id, r.name, r.remote_url, k.id, k.name, k.key_type
                 ORDER BY p.created_at DESC
         `)
         if err != nil {
@@ -37,20 +38,32 @@ func (r *ProjectRepository) GetAll() ([]models.Project, error) {
         var projects []models.Project
         for rows.Next() {
                 var p models.Project
-                var keyID, keyName, keyType sql.NullString
-                err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.GitProject, &p.KeyID, &p.CreatedAt, &p.UpdatedAt, &p.TestSuitesCount, &keyID, &keyName, &keyType)
+                var repoID, repoName, repoURL, keyID, keyName, keyType sql.NullString
+                err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.RepositoryID, &p.CreatedAt, &p.UpdatedAt, &p.TestSuitesCount, &repoID, &repoName, &repoURL, &keyID, &keyName, &keyType)
                 if err != nil {
                         return nil, err
                 }
                 
-                // Set key information if available
-                if keyID.Valid {
-                        var kid int
-                        if err := keyID.Scan(&kid); err == nil {
-                                p.Key = &models.Key{
-                                        ID:      kid,
-                                        Name:    keyName.String,
-                                        KeyType: keyType.String,
+                // Set repository information if available
+                if repoID.Valid {
+                        var rid int
+                        if err := repoID.Scan(&rid); err == nil {
+                                p.Repository = &models.Repository{
+                                        ID:        rid,
+                                        Name:      repoName.String,
+                                        RemoteURL: repoURL.String,
+                                }
+                                
+                                // Set key information if available
+                                if keyID.Valid {
+                                        var kid int
+                                        if err := keyID.Scan(&kid); err == nil {
+                                                p.Repository.Key = &models.Key{
+                                                        ID:      kid,
+                                                        Name:    keyName.String,
+                                                        KeyType: keyType.String,
+                                                }
+                                        }
                                 }
                         }
                 }
@@ -64,26 +77,39 @@ func (r *ProjectRepository) GetAll() ([]models.Project, error) {
 // GetByID returns a project by ID with test suite count
 func (r *ProjectRepository) GetByID(id int) (*models.Project, error) {
         var project models.Project
-        var keyID, keyName, keyType sql.NullString
+        var repoID, repoName, repoURL, keyID, keyName, keyType sql.NullString
         err := r.db.QueryRow(`
-                SELECT p.id, p.name, p.description, p.git_project, p.key_id, p.created_at, p.updated_at,
+                SELECT p.id, p.name, p.description, p.repository_id, p.created_at, p.updated_at,
                        COALESCE(COUNT(ts.id), 0) as test_suites_count,
-                       k.id, k.name, k.key_type
+                       r.id, r.name, r.remote_url, k.id, k.name, k.key_type
                 FROM projects p
                 LEFT JOIN test_suites ts ON p.id = ts.project_id
-                LEFT JOIN keys k ON p.key_id = k.id
+                LEFT JOIN repositories r ON p.repository_id = r.id
+                LEFT JOIN keys k ON r.key_id = k.id
                 WHERE p.id = $1
-                GROUP BY p.id, p.name, p.description, p.git_project, p.key_id, p.created_at, p.updated_at,
-                         k.id, k.name, k.key_type
-        `, id).Scan(&project.ID, &project.Name, &project.Description, &project.GitProject, &project.KeyID, &project.CreatedAt, &project.UpdatedAt, &project.TestSuitesCount, &keyID, &keyName, &keyType)
+                GROUP BY p.id, p.name, p.description, p.repository_id, p.created_at, p.updated_at,
+                         r.id, r.name, r.remote_url, k.id, k.name, k.key_type
+        `, id).Scan(&project.ID, &project.Name, &project.Description, &project.RepositoryID, &project.CreatedAt, &project.UpdatedAt, &project.TestSuitesCount, &repoID, &repoName, &repoURL, &keyID, &keyName, &keyType)
 
-        if err == nil && keyID.Valid {
-                var kid int
-                if err := keyID.Scan(&kid); err == nil {
-                        project.Key = &models.Key{
-                                ID:      kid,
-                                Name:    keyName.String,
-                                KeyType: keyType.String,
+        if err == nil && repoID.Valid {
+                var rid int
+                if err := repoID.Scan(&rid); err == nil {
+                        project.Repository = &models.Repository{
+                                ID:        rid,
+                                Name:      repoName.String,
+                                RemoteURL: repoURL.String,
+                        }
+                        
+                        // Set key information if available
+                        if keyID.Valid {
+                                var kid int
+                                if err := keyID.Scan(&kid); err == nil {
+                                        project.Repository.Key = &models.Key{
+                                                ID:      kid,
+                                                Name:    keyName.String,
+                                                KeyType: keyType.String,
+                                        }
+                                }
                         }
                 }
         }
@@ -102,9 +128,9 @@ func (r *ProjectRepository) GetByID(id int) (*models.Project, error) {
 func (r *ProjectRepository) Create(req *models.CreateProjectRequest) (*models.Project, error) {
         var project models.Project
         err := r.db.QueryRow(
-                "INSERT INTO projects (name, description, git_project, key_id) VALUES ($1, $2, $3, $4) RETURNING id, name, description, git_project, key_id, created_at, updated_at",
-                req.Name, req.Description, req.GitProject, req.KeyID,
-        ).Scan(&project.ID, &project.Name, &project.Description, &project.GitProject, &project.KeyID, &project.CreatedAt, &project.UpdatedAt)
+                "INSERT INTO projects (name, description, repository_id) VALUES ($1, $2, $3) RETURNING id, name, description, repository_id, created_at, updated_at",
+                req.Name, req.Description, req.RepositoryID,
+        ).Scan(&project.ID, &project.Name, &project.Description, &project.RepositoryID, &project.CreatedAt, &project.UpdatedAt)
 
         if err != nil {
                 return nil, err
@@ -117,9 +143,9 @@ func (r *ProjectRepository) Create(req *models.CreateProjectRequest) (*models.Pr
 func (r *ProjectRepository) Update(id int, req *models.UpdateProjectRequest) (*models.Project, error) {
         var project models.Project
         err := r.db.QueryRow(
-                "UPDATE projects SET name = $1, description = $2, git_project = $3, key_id = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING id, name, description, git_project, key_id, created_at, updated_at",
-                req.Name, req.Description, req.GitProject, req.KeyID, id,
-        ).Scan(&project.ID, &project.Name, &project.Description, &project.GitProject, &project.KeyID, &project.CreatedAt, &project.UpdatedAt)
+                "UPDATE projects SET name = $1, description = $2, repository_id = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING id, name, description, repository_id, created_at, updated_at",
+                req.Name, req.Description, req.RepositoryID, id,
+        ).Scan(&project.ID, &project.Name, &project.Description, &project.RepositoryID, &project.CreatedAt, &project.UpdatedAt)
 
         if err == sql.ErrNoRows {
                 return nil, nil

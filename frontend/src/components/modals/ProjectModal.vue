@@ -17,27 +17,21 @@
               <textarea class="form-control" id="projectDescription" v-model="form.description" rows="3"></textarea>
             </div>
             <div class="mb-3">
-              <label for="projectGitProject" class="form-label">Git Project <small class="text-muted">(Optional)</small></label>
-              <input type="url" class="form-control" id="projectGitProject" v-model="form.git_project" placeholder="https://github.com/username/project">
-              <div class="form-text">Link to your Git repository (GitHub, GitLab, etc.) for test run integration</div>
-            </div>
-            
-            <!-- Key Selector - only show when Git project is filled -->
-            <div v-if="form.git_project && form.git_project.trim()" class="mb-3">
-              <label for="projectKey" class="form-label">Authentication Key <small class="text-muted">(Optional)</small></label>
-              <select class="form-select" id="projectKey" v-model="form.key_id">
-                <option value="">No authentication required</option>
-                <option v-for="key in keys" :key="key.id" :value="key.id">
-                  {{ key.name }} ({{ key.key_type }}){{ key.username ? ` - ${key.username}` : '' }}
+              <label for="projectRepository" class="form-label">Git Repository <small class="text-muted">(Optional)</small></label>
+              <select class="form-select" id="projectRepository" v-model="form.repository_id">
+                <option :value="null">No repository</option>
+                <option 
+                  v-for="repository in repositories" 
+                  :key="repository.id" 
+                  :value="repository.id"
+                >
+                  {{ repository.name }} - {{ truncateUrl(repository.remote_url) }}
                 </option>
               </select>
               <div class="form-text">
-                <i class="fas fa-key"></i>
-                Choose authentication credentials for this Git repository
-              </div>
-              <div v-if="keys.length === 0" class="form-text text-warning">
-                <i class="fas fa-exclamation-triangle"></i>
-                No keys available. <router-link to="/keys" target="_blank">Create keys</router-link> for Git authentication.
+                <i class="fas fa-code-branch"></i>
+                Link to a Git repository for version control integration. 
+                <router-link to="/repositories" class="text-decoration-none">Manage repositories</router-link>
               </div>
             </div>
           </div>
@@ -76,10 +70,9 @@ export default {
       form: {
         name: '',
         description: '',
-        git_project: '',
-        key_id: ''
+        repository_id: null
       },
-      keys: [],
+      repositories: [],
       saving: false
     }
   },
@@ -92,12 +85,11 @@ export default {
     show(newVal) {
       if (newVal) {
         this.resetForm()
-        this.loadKeys()
+        this.loadRepositories()
         if (this.project) {
           this.form.name = this.project.name
           this.form.description = this.project.description
-          this.form.git_project = this.project.git_project || ''
-          this.form.key_id = this.project.key_id || ''
+          this.form.repository_id = this.project.repository_id || null
         }
       }
     }
@@ -111,28 +103,34 @@ export default {
       this.form = {
         name: '',
         description: '',
-        git_project: '',
-        key_id: ''
+        repository_id: null
       }
     },
 
-    async loadKeys() {
+    async loadRepositories() {
       try {
-        const data = await api.getKeys()
-        this.keys = Array.isArray(data) ? data : []
+        const data = await api.getRepositories()
+        this.repositories = Array.isArray(data) ? data : []
       } catch (error) {
-        this.keys = []
-        console.error('Error loading keys:', error)
+        this.repositories = []
+        console.error('Error loading repositories:', error)
       }
+    },
+
+    truncateUrl(url) {
+      if (url && url.length > 50) {
+        return url.substring(0, 47) + '...'
+      }
+      return url
     },
 
     async save() {
       this.saving = true
       try {
-        // Prepare form data, ensuring key_id is either a number or null
+        // Prepare form data, ensuring repository_id is either a number or null
         const formData = {
           ...this.form,
-          key_id: this.form.key_id && this.form.key_id !== '' ? parseInt(this.form.key_id) : null
+          repository_id: this.form.repository_id ? parseInt(this.form.repository_id) : null
         }
 
         if (this.isEditing) {

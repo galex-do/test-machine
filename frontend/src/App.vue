@@ -22,6 +22,11 @@
               </router-link>
             </li>
             <li class="nav-item">
+              <router-link to="/repositories" class="nav-link" :class="{ active: $route.name === 'Repositories' }">
+                <i class="fas fa-code-branch"></i> Repositories
+              </router-link>
+            </li>
+            <li class="nav-item">
               <router-link to="/keys" class="nav-link" :class="{ active: $route.name === 'Keys' }">
                 <i class="fas fa-key"></i> Keys
               </router-link>

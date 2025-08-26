@@ -70,7 +70,7 @@ func main() {
         gitService := service.NewGitService(projectRepo, repositoryRepo, keyRepo, encryptionService)
 
         // Initialize handlers
-        handler := handlers.NewHandler(projectService, testSuiteService, testCaseService, testRunService, keyService, gitService)
+        handler := handlers.NewHandler(projectService, testSuiteService, testCaseService, testRunService, keyService, gitService, repositoryRepo)
 
         // Setup routes
         mux := handler.SetupRoutes()

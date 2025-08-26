@@ -79,6 +79,14 @@ export const api = {
   getStats: () => apiClient.get('/stats'),
   getReports: () => apiClient.get('/reports'),
 
+  // Repositories
+  getRepositories: () => apiClient.get('/repositories'),
+  getRepository: (id) => apiClient.get(`/repositories/${id}`),
+  createRepository: (data) => apiClient.post('/repositories', data),
+  updateRepository: (id, data) => apiClient.put(`/repositories/${id}`, data),
+  deleteRepository: (id) => apiClient.delete(`/repositories/${id}`),
+  syncRepository: (repositoryId) => apiClient.post(`/repositories/${repositoryId}/sync`),
+
   // Sync
   syncProject: (projectId) => apiClient.post(`/sync/projects/${projectId}/sync`)
 }

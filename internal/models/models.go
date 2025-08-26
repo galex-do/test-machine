@@ -7,12 +7,11 @@ type Project struct {
         ID              int       `json:"id"`
         Name            string    `json:"name"`
         Description     string    `json:"description"`
-        GitProject      *string   `json:"git_project,omitempty"`
-        KeyID           *int      `json:"key_id,omitempty"`
+        RepositoryID    *int      `json:"repository_id,omitempty"`
         CreatedAt       time.Time `json:"created_at"`
         UpdatedAt       time.Time `json:"updated_at"`
         TestSuitesCount int       `json:"test_suites_count,omitempty"`
-        Key             *Key      `json:"key,omitempty"`
+        Repository      *Repository `json:"repository,omitempty"`
 }
 
 // TestSuite represents a collection of test cases
@@ -72,18 +71,16 @@ type TestRun struct {
 
 // CreateProjectRequest represents the request to create a new project
 type CreateProjectRequest struct {
-        Name        string  `json:"name"`
-        Description string  `json:"description"`
-        GitProject  *string `json:"git_project"`
-        KeyID       *int    `json:"key_id"`
+        Name         string `json:"name"`
+        Description  string `json:"description"`
+        RepositoryID *int   `json:"repository_id"`
 }
 
 // UpdateProjectRequest represents the request to update a project
 type UpdateProjectRequest struct {
-        Name        string  `json:"name"`
-        Description string  `json:"description"`
-        GitProject  *string `json:"git_project"`
-        KeyID       *int    `json:"key_id"`
+        Name         string `json:"name"`
+        Description  string `json:"description"`
+        RepositoryID *int   `json:"repository_id"`
 }
 
 // CreateTestSuiteRequest represents the request to create a new test suite
@@ -182,15 +179,18 @@ type KeyDecryptResponse struct {
         Data string `json:"data"`
 }
 
-// Repository represents a Git repository synced with a project
+// Repository represents a Git repository that can be used by projects
 type Repository struct {
         ID            int       `json:"id"`
-        ProjectID     int       `json:"project_id"`
+        Name          string    `json:"name"`
+        Description   string    `json:"description"`
         RemoteURL     string    `json:"remote_url"`
+        KeyID         *int      `json:"key_id,omitempty"`
         DefaultBranch *string   `json:"default_branch,omitempty"`
         SyncedAt      *time.Time `json:"synced_at,omitempty"`
         CreatedAt     time.Time `json:"created_at"`
         UpdatedAt     time.Time `json:"updated_at"`
+        Key           *Key      `json:"key,omitempty"`
         Branches      []Branch  `json:"branches,omitempty"`
         Tags          []Tag     `json:"tags,omitempty"`
 }
@@ -216,9 +216,25 @@ type Tag struct {
         UpdatedAt    time.Time `json:"updated_at"`
 }
 
-// SyncRequest represents a request to sync a project with its Git repository
+// CreateRepositoryRequest represents the request to create a new repository
+type CreateRepositoryRequest struct {
+        Name        string `json:"name"`
+        Description string `json:"description"`
+        RemoteURL   string `json:"remote_url"`
+        KeyID       *int   `json:"key_id"`
+}
+
+// UpdateRepositoryRequest represents the request to update a repository
+type UpdateRepositoryRequest struct {
+        Name        string `json:"name"`
+        Description string `json:"description"`
+        KeyID       *int   `json:"key_id"`
+        // Note: RemoteURL is intentionally omitted - it's immutable after creation
+}
+
+// SyncRequest represents a request to sync a repository
 type SyncRequest struct {
-        ProjectID int `json:"project_id"`
+        RepositoryID int `json:"repository_id"`
 }
 
 // SyncResponse represents the response from a sync operation

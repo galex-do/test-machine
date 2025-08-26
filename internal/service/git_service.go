@@ -33,7 +33,7 @@ func NewGitService(projectRepo *repository.ProjectRepository, repositoryRepo *re
 
 // SyncProjectRepository syncs a project's Git repository and stores branches/tags
 func (s *GitService) SyncProjectRepository(projectID int) (*models.SyncResponse, error) {
-        // Get project details with key information
+        // Get project details with repository information
         project, err := s.projectRepo.GetByID(projectID)
         if err != nil {
                 return nil, fmt.Errorf("failed to get project: %w", err)
@@ -41,14 +41,28 @@ func (s *GitService) SyncProjectRepository(projectID int) (*models.SyncResponse,
         if project == nil {
                 return nil, fmt.Errorf("project not found")
         }
-        if project.GitProject == nil || *project.GitProject == "" {
+        if project.Repository == nil {
                 return nil, fmt.Errorf("project has no Git repository configured")
+        }
+
+        return s.SyncRepository(project.Repository.ID)
+}
+
+// SyncRepository syncs a repository and stores branches/tags
+func (s *GitService) SyncRepository(repositoryID int) (*models.SyncResponse, error) {
+        // Get repository details
+        repository, err := s.repositoryRepo.GetByID(repositoryID)
+        if err != nil {
+                return nil, fmt.Errorf("failed to get repository: %w", err)
+        }
+        if repository == nil {
+                return nil, fmt.Errorf("repository not found")
         }
 
         // Get authentication if key is configured
         var auth transport.AuthMethod
-        if project.KeyID != nil {
-                auth, err = s.getAuthMethod(*project.KeyID, *project.GitProject)
+        if repository.KeyID != nil {
+                auth, err = s.getAuthMethod(*repository.KeyID, repository.RemoteURL)
                 if err != nil {
                         return &models.SyncResponse{
                                 Success: false,
@@ -59,7 +73,7 @@ func (s *GitService) SyncProjectRepository(projectID int) (*models.SyncResponse,
 
         // Clone repository to memory to list branches and tags
         repo, err := git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
-                URL:  *project.GitProject,
+                URL:  repository.RemoteURL,
                 Auth: auth,
         })
         if err != nil {
@@ -110,13 +124,11 @@ func (s *GitService) SyncProjectRepository(projectID int) (*models.SyncResponse,
                 }
         }
 
-        // Create or update repository record
-        repository, err := s.repositoryRepo.CreateOrUpdate(&models.Repository{
-                ProjectID:     projectID,
-                RemoteURL:     *project.GitProject,
-                DefaultBranch: stringPtr(defaultBranch),
-                SyncedAt:      timePtr(time.Now()),
-        }, branches, tags)
+        // Update repository with sync data
+        repository.DefaultBranch = stringPtr(defaultBranch)
+        repository.SyncedAt = timePtr(time.Now())
+
+        updatedRepository, err := s.repositoryRepo.CreateOrUpdateSync(repository, branches, tags)
         if err != nil {
                 return &models.SyncResponse{
                         Success: false,
@@ -127,7 +139,7 @@ func (s *GitService) SyncProjectRepository(projectID int) (*models.SyncResponse,
         return &models.SyncResponse{
                 Success:     true,
                 Message:     "Repository synced successfully",
-                Repository:  repository,
+                Repository:  updatedRepository,
                 BranchCount: len(branches),
                 TagCount:    len(tags),
         }, nil
