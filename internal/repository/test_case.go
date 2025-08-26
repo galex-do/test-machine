@@ -36,7 +36,7 @@ func (r *TestCaseRepository) GetAll(testSuiteID *int) ([]models.TestCase, error)
                                 GROUP BY test_case_id
                         ) step_counts ON tc.id = step_counts.test_case_id
                         WHERE tc.test_suite_id = $1
-                        ORDER BY tc.created_at DESC
+                        ORDER BY tc.created_at ASC
                 `
                 args = []interface{}{*testSuiteID}
         } else {
@@ -53,7 +53,7 @@ func (r *TestCaseRepository) GetAll(testSuiteID *int) ([]models.TestCase, error)
                                 FROM test_steps
                                 GROUP BY test_case_id
                         ) step_counts ON tc.id = step_counts.test_case_id
-                        ORDER BY tc.created_at DESC
+                        ORDER BY tc.created_at ASC
                 `
         }
 
