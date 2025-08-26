@@ -31,6 +31,11 @@
         </div>
       </div>
       <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+          <button type="button" class="btn btn-outline-secondary" @click="showEditTestCaseModal">
+            <i class="fas fa-edit"></i> Edit Test Case
+          </button>
+        </div>
         <button type="button" class="btn btn-primary" @click="showCreateTestStepModal">
           <i class="fas fa-plus"></i> Add Test Step
         </button>
@@ -128,6 +133,15 @@
       @close="closeModal"
       @saved="handleTestStepSaved"
     />
+
+    <!-- Test Case Modal -->
+    <TestCaseModal 
+      :show="showTestCaseModal" 
+      :testCase="testCase"
+      :testSuiteId="parseInt(sid)"
+      @close="closeTestCaseModal"
+      @saved="handleTestCaseSaved"
+    />
   </div>
 </template>
 
@@ -135,11 +149,13 @@
 import { api } from '../services/api.js'
 import { formatDate, showAlert, showLoading, truncateText, getStatusBadgeClass, getPriorityBadgeClass } from '../utils/helpers.js'
 import TestStepModal from './modals/TestStepModal.vue'
+import TestCaseModal from './modals/TestCaseModal.vue'
 
 export default {
   name: 'TestCaseDetail',
   components: {
-    TestStepModal
+    TestStepModal,
+    TestCaseModal
   },
   props: {
     pid: {
@@ -161,7 +177,8 @@ export default {
       testSteps: [],
       loading: true,
       showModal: false,
-      selectedTestStep: null
+      selectedTestStep: null,
+      showTestCaseModal: false
     }
   },
   computed: {
@@ -234,6 +251,20 @@ export default {
       } catch (error) {
         showAlert('Error deleting test step: ' + error.message, 'danger')
       }
+    },
+
+    showEditTestCaseModal() {
+      this.showTestCaseModal = true
+    },
+
+    closeTestCaseModal() {
+      this.showTestCaseModal = false
+    },
+
+    handleTestCaseSaved() {
+      this.closeTestCaseModal()
+      this.loadData()
+      showAlert('Test case updated successfully!', 'success')
     }
   }
 }

@@ -20,6 +20,11 @@
         <p class="text-muted">{{ testSuite?.description || 'No description available' }}</p>
       </div>
       <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+          <button type="button" class="btn btn-outline-secondary" @click="showEditTestSuiteModal">
+            <i class="fas fa-edit"></i> Edit Test Suite
+          </button>
+        </div>
         <button type="button" class="btn btn-primary" @click="showCreateTestCaseModal">
           <i class="fas fa-plus"></i> New Test Case
         </button>
@@ -101,6 +106,15 @@
       @close="closeModal"
       @saved="handleTestCaseSaved"
     />
+
+    <!-- Test Suite Modal -->
+    <TestSuiteModal 
+      :show="showTestSuiteModal" 
+      :testSuite="testSuite"
+      :projectId="parseInt(pid)"
+      @close="closeTestSuiteModal"
+      @saved="handleTestSuiteSaved"
+    />
   </div>
 </template>
 
@@ -108,11 +122,13 @@
 import { api } from '../services/api.js'
 import { formatDate, showAlert, showLoading, truncateText, getStatusBadgeClass, getPriorityBadgeClass } from '../utils/helpers.js'
 import TestCaseModal from './modals/TestCaseModal.vue'
+import TestSuiteModal from './modals/TestSuiteModal.vue'
 
 export default {
   name: 'TestSuiteDetail',
   components: {
-    TestCaseModal
+    TestCaseModal,
+    TestSuiteModal
   },
   props: {
     pid: {
@@ -130,7 +146,8 @@ export default {
       testCases: [],
       loading: true,
       showModal: false,
-      selectedTestCase: null
+      selectedTestCase: null,
+      showTestSuiteModal: false
     }
   },
   mounted() {
@@ -198,6 +215,20 @@ export default {
       } catch (error) {
         showAlert('Error deleting test case: ' + error.message, 'danger')
       }
+    },
+
+    showEditTestSuiteModal() {
+      this.showTestSuiteModal = true
+    },
+
+    closeTestSuiteModal() {
+      this.showTestSuiteModal = false
+    },
+
+    handleTestSuiteSaved() {
+      this.closeTestSuiteModal()
+      this.loadData()
+      showAlert('Test suite updated successfully!', 'success')
     }
   }
 }
