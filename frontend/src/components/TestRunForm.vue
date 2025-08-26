@@ -269,8 +269,8 @@
                             type="checkbox"
                             class="form-check-input"
                             :id="'case-' + testCase.id"
-                            :value="testCase.id"
-                            v-model="selectedTestCases"
+                            :checked="isTestCaseSelected(testCase.id)"
+                            @change="toggleTestCase(testCase.id)"
                           >
                           <label class="form-check-label w-100" :for="'case-' + testCase.id">
                             <div class="d-flex justify-content-between align-items-start">
@@ -413,6 +413,12 @@ export default {
         if (this.form.project_id) {
           await this.onProjectChange()
         }
+
+        // Force reactivity update for checkboxes after test suites are loaded
+        this.$nextTick(() => {
+          // Trigger a reactive update by reassigning the array
+          this.selectedTestCases = [...this.selectedTestCases]
+        })
 
       } catch (error) {
         console.error('Error loading test run:', error)
@@ -557,6 +563,21 @@ export default {
         case 'medium': return 'bg-warning'
         case 'low': return 'bg-success'
         default: return 'bg-secondary'
+      }
+    },
+
+    isTestCaseSelected(testCaseId) {
+      return this.selectedTestCases.includes(testCaseId)
+    },
+
+    toggleTestCase(testCaseId) {
+      const index = this.selectedTestCases.indexOf(testCaseId)
+      if (index > -1) {
+        // Remove test case
+        this.selectedTestCases.splice(index, 1)
+      } else {
+        // Add test case
+        this.selectedTestCases.push(testCaseId)
       }
     },
 
