@@ -44,14 +44,14 @@ CREATE TABLE test_run_cases (
 -- Update test_executions to reference test_run_cases instead of test_cases directly
 ALTER TABLE test_executions ADD COLUMN test_run_case_id INTEGER REFERENCES test_run_cases(id) ON DELETE CASCADE;
 
--- Create indexes for performance
-CREATE INDEX idx_test_runs_project_id ON test_runs(project_id);
-CREATE INDEX idx_test_runs_repository_id ON test_runs(repository_id);
-CREATE INDEX idx_test_runs_status ON test_runs(status);
-CREATE INDEX idx_test_run_cases_test_run_id ON test_run_cases(test_run_id);
-CREATE INDEX idx_test_run_cases_test_case_id ON test_run_cases(test_case_id);
-CREATE INDEX idx_test_run_cases_status ON test_run_cases(status);
-CREATE INDEX idx_test_executions_test_run_case_id ON test_executions(test_run_case_id);
+-- Create indexes for performance (idempotent)
+CREATE INDEX IF NOT EXISTS idx_test_runs_project_id ON test_runs(project_id);
+CREATE INDEX IF NOT EXISTS idx_test_runs_repository_id ON test_runs(repository_id);
+CREATE INDEX IF NOT EXISTS idx_test_runs_status ON test_runs(status);
+CREATE INDEX IF NOT EXISTS idx_test_run_cases_test_run_id ON test_run_cases(test_run_id);
+CREATE INDEX IF NOT EXISTS idx_test_run_cases_test_case_id ON test_run_cases(test_case_id);
+CREATE INDEX IF NOT EXISTS idx_test_run_cases_status ON test_run_cases(status);
+CREATE INDEX IF NOT EXISTS idx_test_executions_test_run_case_id ON test_executions(test_run_case_id);
 
 -- +goose Down
 -- Drop new tables and restore original structure
