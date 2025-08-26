@@ -10,6 +10,7 @@ import TestCaseDetail from './components/TestCaseDetail.vue'
 import TestRunDetail from './components/TestRunDetail.vue'
 import Reports from './components/Reports.vue'
 import Repositories from './components/Repositories.vue'
+import RepositoryDetail from './components/RepositoryDetail.vue'
 import Keys from './components/Keys.vue'
 
 // Import styles
@@ -24,6 +25,7 @@ const routes = [
   { path: '/test-run/:id', name: 'TestRunDetail', component: TestRunDetail, props: true },
   { path: '/reports', name: 'Reports', component: Reports },
   { path: '/repositories', name: 'Repositories', component: Repositories },
+  { path: '/repository/:id', name: 'RepositoryDetail', component: RepositoryDetail, props: true },
   { path: '/keys', name: 'Keys', component: Keys }
 ]
 

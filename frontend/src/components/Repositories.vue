@@ -40,7 +40,12 @@
             <tr v-for="repository in repositories" :key="repository.id">
               <td>
                 <div>
-                  <strong>{{ repository.name }}</strong>
+                  <router-link 
+                    :to="`/repository/${repository.id}`" 
+                    class="text-decoration-none"
+                  >
+                    <strong>{{ repository.name }}</strong>
+                  </router-link>
                   <div v-if="repository.description" class="text-muted small">{{ repository.description }}</div>
                 </div>
               </td>

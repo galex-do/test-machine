@@ -5,6 +5,7 @@ import (
         "fmt"
         "net/http"
         "strconv"
+        "strings"
 
         "github.com/galex-do/test-machine/internal/models"
         "github.com/galex-do/test-machine/internal/repository"
@@ -55,6 +56,9 @@ func (h *Handler) SetupRoutes() http.Handler {
         mux.HandleFunc("/api/keys/", h.keyByIDAPIHandler)
         mux.HandleFunc("/api/repositories", h.repositoriesAPIHandler)
         mux.HandleFunc("/api/repositories/", h.repositoryAPIHandler)
+        
+        // Add a specific handler for repository details with branches and tags
+        mux.HandleFunc("GET /api/repositories/{id}/details", h.repositoryDetailsAPIHandler)
         mux.HandleFunc("/api/sync/", h.syncAPIHandler)
         mux.HandleFunc("/api/stats", h.statsAPIHandler)
 
@@ -242,22 +246,26 @@ func (h *Handler) repositoryAPIHandler(w http.ResponseWriter, r *http.Request) {
                 return
         }
 
-        // Handle sync endpoint separately
-        if r.Method == "POST" && fmt.Sprintf("/api/repositories/%s/sync", idStr) == path {
-                id, err := strconv.Atoi(idStr)
-                if err != nil {
-                        h.writeJSONError(w, "Invalid repository ID", http.StatusBadRequest)
+        // Handle sync endpoint separately - check if path ends with /sync
+        if r.Method == "POST" && strings.HasSuffix(path, "/sync") {
+                // Use a simple regex-like approach to extract the ID
+                parts := strings.Split(path, "/")
+                if len(parts) >= 4 && parts[1] == "api" && parts[2] == "repositories" && parts[4] == "sync" {
+                        id, err := strconv.Atoi(parts[3])
+                        if err != nil {
+                                h.writeJSONError(w, "Invalid repository ID", http.StatusBadRequest)
+                                return
+                        }
+
+                        response, err := h.gitService.SyncRepository(id)
+                        if err != nil {
+                                h.writeJSONError(w, err.Error(), http.StatusInternalServerError)
+                                return
+                        }
+
+                        h.writeJSONResponse(w, response)
                         return
                 }
-
-                response, err := h.gitService.SyncRepository(id)
-                if err != nil {
-                        h.writeJSONError(w, err.Error(), http.StatusInternalServerError)
-                        return
-                }
-
-                h.writeJSONResponse(w, response)
-                return
         }
 
         id, err := strconv.Atoi(idStr)
@@ -268,6 +276,33 @@ func (h *Handler) repositoryAPIHandler(w http.ResponseWriter, r *http.Request) {
 
         switch r.Method {
         case "GET":
+                // Check if requesting detailed view with branches and tags
+                if strings.HasSuffix(path, "/details") {
+                        // Use the same path parsing approach as sync
+                        parts := strings.Split(path, "/")
+                        if len(parts) == 5 && parts[1] == "api" && parts[2] == "repositories" && parts[4] == "details" {
+                                detailId, err := strconv.Atoi(parts[3])
+                                if err != nil {
+                                        h.writeJSONError(w, "Invalid repository ID", http.StatusBadRequest)
+                                        return
+                                }
+
+                                repository, err := h.repositoryRepo.GetWithBranchesAndTags(detailId)
+                                if err != nil {
+                                        h.writeJSONError(w, err.Error(), http.StatusInternalServerError)
+                                        return
+                                }
+
+                                if repository == nil {
+                                        h.writeJSONError(w, "Repository not found", http.StatusNotFound)
+                                        return
+                                }
+
+                                h.writeJSONResponse(w, repository)
+                                return
+                        }
+                }
+
                 repository, err := h.repositoryRepo.GetByID(id)
                 if err != nil {
                         h.writeJSONError(w, err.Error(), http.StatusInternalServerError)
@@ -334,4 +369,27 @@ func (h *Handler) repositoryAPIHandler(w http.ResponseWriter, r *http.Request) {
         default:
                 h.writeJSONError(w, "Method not allowed", http.StatusMethodNotAllowed)
         }
+}
+
+// repositoryDetailsAPIHandler handles GET /api/repositories/{id}/details - returns repository with branches and tags
+func (h *Handler) repositoryDetailsAPIHandler(w http.ResponseWriter, r *http.Request) {
+        idStr := r.PathValue("id")
+        id, err := strconv.Atoi(idStr)
+        if err != nil {
+                h.writeJSONError(w, "Invalid repository ID", http.StatusBadRequest)
+                return
+        }
+
+        repository, err := h.repositoryRepo.GetWithBranchesAndTags(id)
+        if err != nil {
+                h.writeJSONError(w, err.Error(), http.StatusInternalServerError)
+                return
+        }
+
+        if repository == nil {
+                h.writeJSONError(w, "Repository not found", http.StatusNotFound)
+                return
+        }
+
+        h.writeJSONResponse(w, repository)
 }

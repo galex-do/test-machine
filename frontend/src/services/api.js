@@ -82,6 +82,7 @@ export const api = {
   // Repositories
   getRepositories: () => apiClient.get('/repositories'),
   getRepository: (id) => apiClient.get(`/repositories/${id}`),
+  getRepositoryDetails: (id) => apiClient.get(`/repositories/${id}/details`),
   createRepository: (data) => apiClient.post('/repositories', data),
   updateRepository: (id, data) => apiClient.put(`/repositories/${id}`, data),
   deleteRepository: (id) => apiClient.delete(`/repositories/${id}`),
