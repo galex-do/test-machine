@@ -447,11 +447,14 @@ export default {
       try {
         // Load test suites for project
         const response = await api.getTestSuites(this.form.project_id)
+        console.log('Raw API response for test suites:', response)
         this.testSuites = response || []
+        console.log('Test suites after assignment:', this.testSuites)
 
         // Expand all suites by default when loading
         this.testSuites.forEach(suite => {
           this.expandedSuites.add(suite.id)
+          console.log(`Suite ${suite.name} test cases:`, suite.test_cases)
         })
 
         // Load git references if project has repository
