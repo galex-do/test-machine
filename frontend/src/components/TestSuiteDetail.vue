@@ -33,8 +33,19 @@
 
     <!-- Test Cases List -->
     <div class="card">
-      <div class="card-header">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <h5><i class="fas fa-list-check"></i> Test Cases</h5>
+        <div class="d-flex align-items-center">
+          <label for="sortBy" class="form-label me-2 mb-0">Sort by:</label>
+          <select class="form-select form-select-sm" id="sortBy" v-model="sortBy" @change="applySorting" style="width: auto;">
+            <option value="created_desc">Created Date (Newest First)</option>
+            <option value="created_asc">Created Date (Oldest First)</option>
+            <option value="title_asc">Name (A-Z)</option>
+            <option value="title_desc">Name (Z-A)</option>
+            <option value="priority_desc">Priority (Critical to Low)</option>
+            <option value="priority_asc">Priority (Low to Critical)</option>
+          </select>
+        </div>
       </div>
       <div class="card-body">
         <div v-if="loading" v-html="showLoading()"></div>
@@ -60,7 +71,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="testCase in testCases" :key="testCase.id">
+              <tr v-for="testCase in sortedTestCases" :key="testCase.id">
                 <td>
                   <router-link :to="`/project/${pid}/test-suite/${sid}/test-case/${testCase.id}`" class="text-decoration-none">
                     <strong>{{ testCase.title }}</strong>
@@ -147,7 +158,34 @@ export default {
       loading: true,
       showModal: false,
       selectedTestCase: null,
-      showTestSuiteModal: false
+      showTestSuiteModal: false,
+      sortBy: 'created_desc'
+    }
+  },
+  computed: {
+    sortedTestCases() {
+      if (!this.testCases || !Array.isArray(this.testCases)) {
+        return []
+      }
+
+      const cases = [...this.testCases]
+      
+      switch (this.sortBy) {
+        case 'created_asc':
+          return cases.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+        case 'created_desc':
+          return cases.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        case 'title_asc':
+          return cases.sort((a, b) => a.title.localeCompare(b.title))
+        case 'title_desc':
+          return cases.sort((a, b) => b.title.localeCompare(a.title))
+        case 'priority_desc':
+          return cases.sort((a, b) => this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority))
+        case 'priority_asc':
+          return cases.sort((a, b) => this.getPriorityValue(a.priority) - this.getPriorityValue(b.priority))
+        default:
+          return cases
+      }
     }
   },
   mounted() {
@@ -229,6 +267,21 @@ export default {
       this.closeTestSuiteModal()
       this.loadData()
       showAlert('Test suite updated successfully!', 'success')
+    },
+
+    getPriorityValue(priority) {
+      const priorityMap = {
+        'Critical': 4,
+        'High': 3,
+        'Medium': 2,
+        'Low': 1
+      }
+      return priorityMap[priority] || 0
+    },
+
+    applySorting() {
+      // The computed property will automatically re-sort when sortBy changes
+      // This method is here for any additional logic if needed
     }
   }
 }
