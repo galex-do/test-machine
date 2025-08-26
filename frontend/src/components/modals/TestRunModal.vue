@@ -318,10 +318,22 @@ export default {
     async onProjectChange() {
       if (this.form.project_id) {
         try {
+          // Load test suites for the selected project
           this.testSuites = await api.getTestSuitesByProject(this.form.project_id)
           this.selectedTestCases = []
+          
+          // Load repository details with branches/tags if project has a repository
+          const selectedProject = this.selectedProject
+          if (selectedProject && selectedProject.repository_id) {
+            const repositoryDetails = await api.getRepositoryDetails(selectedProject.repository_id)
+            // Update the project's repository with detailed info
+            const projectIndex = this.projects.findIndex(p => p.id === this.form.project_id)
+            if (projectIndex !== -1) {
+              this.projects[projectIndex].repository = repositoryDetails
+            }
+          }
         } catch (error) {
-          showAlert('Error loading test suites: ' + error.message, 'danger')
+          showAlert('Error loading project data: ' + error.message, 'danger')
         }
       }
     },
