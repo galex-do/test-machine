@@ -408,16 +408,27 @@ export default {
         }
 
         this.selectedTestCases = testRun.test_cases?.map(tc => tc.id) || []
+        
+        console.log('Loaded test run data:', testRun)
+        console.log('Selected test cases from test run:', this.selectedTestCases)
 
         // Load project-specific data
         if (this.form.project_id) {
           await this.onProjectChange()
         }
 
+        // Debug after loading test suites
+        console.log('Test suites loaded:', this.testSuites)
+        console.log('All test case IDs available:')
+        this.testSuites.forEach(suite => {
+          console.log(`Suite ${suite.name}:`, suite.test_cases?.map(tc => tc.id) || [])
+        })
+
         // Force reactivity update for checkboxes after test suites are loaded
         this.$nextTick(() => {
           // Trigger a reactive update by reassigning the array
           this.selectedTestCases = [...this.selectedTestCases]
+          console.log('After nextTick, selected test cases:', this.selectedTestCases)
         })
 
       } catch (error) {
