@@ -16,7 +16,10 @@
         <h1 class="h2">{{ project?.name }}</h1>
         <p class="text-muted">{{ project?.description || 'No description available' }}</p>
         <p v-if="project?.git_project" class="text-muted">
-          <i class="fab fa-git-alt"></i> <strong>Git Project:</strong> {{ project.git_project }}
+          <i class="fab fa-git-alt"></i> <strong>Git Project:</strong> 
+          <a :href="project.git_project" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+            {{ project.git_project }} <i class="fas fa-external-link-alt ms-1"></i>
+          </a>
           <span v-if="project?.key" class="ms-3">
             <i class="fas fa-key"></i> <strong>Auth:</strong> {{ project.key.name }} ({{ project.key.key_type }})
           </span>

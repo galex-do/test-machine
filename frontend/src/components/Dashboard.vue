@@ -70,6 +70,14 @@
                   <router-link :to="`/project/${project.id}`" class="text-decoration-none">
                     <strong>{{ project.name }}</strong>
                   </router-link>
+                  <a v-if="project.git_project" 
+                     :href="project.git_project" 
+                     target="_blank" 
+                     rel="noopener noreferrer" 
+                     class="ms-2 text-muted" 
+                     :title="`Open Git repository: ${project.git_project}`">
+                    <i class="fab fa-git-alt"></i>
+                  </a>
                 </td>
                 <td>{{ project.description || 'No description' }}</td>
                 <td>
