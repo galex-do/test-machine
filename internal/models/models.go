@@ -131,6 +131,18 @@ type TestRun struct {
         Project      *Project           `json:"project,omitempty"`
         Repository   *Repository        `json:"repository,omitempty"`
         TestCases    []TestRunCase      `json:"test_cases,omitempty"`
+        Intervals    []TestRunInterval  `json:"intervals,omitempty"`
+        TotalExecutionTime *int         `json:"total_execution_time,omitempty"` // in seconds
+}
+
+// TestRunInterval represents a time interval during test run execution
+type TestRunInterval struct {
+        ID        int        `json:"id"`
+        TestRunID int        `json:"test_run_id"`
+        StartTime time.Time  `json:"start_time"`
+        EndTime   *time.Time `json:"end_time,omitempty"`
+        CreatedAt time.Time  `json:"created_at"`
+        UpdatedAt time.Time  `json:"updated_at"`
 }
 
 // TestRunCase represents a test case within a test run

@@ -117,6 +117,33 @@
                   </td>
                   <td>
                     <div class="btn-group btn-group-sm" role="group">
+                      <!-- Time Management Buttons -->
+                      <button 
+                        v-if="testRun.status === 'Not Started'"
+                        @click="startTestRun(testRun.id)"
+                        class="btn btn-outline-success"
+                        title="Start Test Run"
+                      >
+                        <i class="fas fa-play"></i>
+                      </button>
+                      <button 
+                        v-else-if="testRun.status === 'In Progress'"
+                        @click="pauseTestRun(testRun.id)"
+                        class="btn btn-outline-warning"
+                        title="Pause Test Run"
+                      >
+                        <i class="fas fa-pause"></i>
+                      </button>
+                      <button 
+                        v-if="testRun.status === 'In Progress' || testRun.status === 'Not Started'"
+                        @click="finishTestRun(testRun.id)"
+                        class="btn btn-outline-primary"
+                        title="Finish Test Run"
+                      >
+                        <i class="fas fa-stop"></i>
+                      </button>
+                      
+                      <!-- Management Buttons -->
                       <router-link 
                         :to="`/test-runs/${testRun.id}/edit`"
                         class="btn btn-outline-secondary"
@@ -254,6 +281,43 @@ export default {
         } catch (error) {
           console.error('Error deleting test run:', error)
           showAlert('Failed to delete test run. Please try again.', 'error')
+        }
+      }
+    },
+
+    async startTestRun(id) {
+      try {
+        await api.startTestRun(id)
+        showAlert('Test run started successfully', 'success')
+        await this.loadTestRuns() // Refresh the list
+      } catch (error) {
+        console.error('Error starting test run:', error)
+        showAlert('Failed to start test run: ' + error.message, 'error')
+      }
+    },
+
+    async pauseTestRun(id) {
+      try {
+        await api.pauseTestRun(id)
+        showAlert('Test run paused successfully', 'success')
+        await this.loadTestRuns() // Refresh the list
+      } catch (error) {
+        console.error('Error pausing test run:', error)
+        showAlert('Failed to pause test run: ' + error.message, 'error')
+      }
+    },
+
+    async finishTestRun(id) {
+      const confirmed = confirm('Are you sure you want to finish this test run? This will mark it as completed.')
+      
+      if (confirmed) {
+        try {
+          await api.finishTestRun(id)
+          showAlert('Test run finished successfully', 'success')
+          await this.loadTestRuns() // Refresh the list
+        } catch (error) {
+          console.error('Error finishing test run:', error)
+          showAlert('Failed to finish test run: ' + error.message, 'error')
         }
       }
     }

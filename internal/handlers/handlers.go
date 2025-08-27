@@ -52,6 +52,9 @@ func (h *Handler) SetupRoutes() http.Handler {
         mux.HandleFunc("/api/test-runs", h.testRunsAPIHandler)
         mux.HandleFunc("/api/test-runs/", h.testRunAPIHandler)
         mux.HandleFunc("PUT /api/test-runs/{runId}/cases/{caseId}", h.updateTestRunCase)
+        mux.HandleFunc("POST /api/test-runs/{id}/start", h.testRunActionHandler)
+        mux.HandleFunc("POST /api/test-runs/{id}/pause", h.testRunActionHandler)
+        mux.HandleFunc("POST /api/test-runs/{id}/finish", h.testRunActionHandler)
         mux.HandleFunc("/api/test-steps/", h.testStepAPIHandler)
         mux.HandleFunc("/api/keys", h.keyAPIHandler)
         mux.HandleFunc("/api/keys/", h.keyByIDAPIHandler)
@@ -393,4 +396,44 @@ func (h *Handler) repositoryDetailsAPIHandler(w http.ResponseWriter, r *http.Req
         }
 
         h.writeJSONResponse(w, repository)
+}
+
+// testRunActionHandler handles test run time management actions (start, pause, finish)
+func (h *Handler) testRunActionHandler(w http.ResponseWriter, r *http.Request) {
+        idStr := r.PathValue("id")
+        id, err := strconv.Atoi(idStr)
+        if err != nil {
+                h.writeJSONError(w, "Invalid test run ID", http.StatusBadRequest)
+                return
+        }
+
+        path := r.URL.Path
+        var action string
+        if strings.HasSuffix(path, "/start") {
+                action = "start"
+        } else if strings.HasSuffix(path, "/pause") {
+                action = "pause"
+        } else if strings.HasSuffix(path, "/finish") {
+                action = "finish"
+        } else {
+                h.writeJSONError(w, "Invalid action", http.StatusBadRequest)
+                return
+        }
+
+        var testRun *models.TestRun
+        switch action {
+        case "start":
+                testRun, err = h.testRunService.StartTestRun(id)
+        case "pause":
+                testRun, err = h.testRunService.PauseTestRun(id)
+        case "finish":
+                testRun, err = h.testRunService.FinishTestRun(id)
+        }
+
+        if err != nil {
+                h.writeJSONError(w, err.Error(), http.StatusBadRequest)
+                return
+        }
+
+        h.writeJSONResponse(w, testRun)
 }

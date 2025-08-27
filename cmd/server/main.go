@@ -58,6 +58,7 @@ func main() {
         testSuiteRepo := repository.NewTestSuiteRepository(db)
         testCaseRepo := repository.NewTestCaseRepository(db)
         testRunRepo := repository.NewTestRunRepository(db)
+        testRunIntervalRepo := repository.NewTestRunIntervalRepository(db)
         keyRepo := repository.NewKeyRepository(db)
         repositoryRepo := repository.NewRepositoryRepository(db)
 
@@ -65,7 +66,7 @@ func main() {
         projectService := service.NewProjectService(projectRepo)
         testSuiteService := service.NewTestSuiteService(testSuiteRepo)
         testCaseService := service.NewTestCaseService(testCaseRepo)
-        testRunService := service.NewTestRunService(testRunRepo, projectRepo)
+        testRunService := service.NewTestRunService(testRunRepo, projectRepo, testRunIntervalRepo)
         keyService := service.NewKeyService(keyRepo, encryptionService)
         gitService := service.NewGitService(projectRepo, repositoryRepo, keyRepo, encryptionService)
 

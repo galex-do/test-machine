@@ -12,13 +12,15 @@ import (
 type TestRunService struct {
         repo        *repository.TestRunRepository
         projectRepo *repository.ProjectRepository
+        intervalRepo *repository.TestRunIntervalRepository
 }
 
 // NewTestRunService creates a new test run service
-func NewTestRunService(repo *repository.TestRunRepository, projectRepo *repository.ProjectRepository) *TestRunService {
+func NewTestRunService(repo *repository.TestRunRepository, projectRepo *repository.ProjectRepository, intervalRepo *repository.TestRunIntervalRepository) *TestRunService {
         return &TestRunService{
                 repo:        repo,
                 projectRepo: projectRepo,
+                intervalRepo: intervalRepo,
         }
 }
 
@@ -89,3 +91,144 @@ func (s *TestRunService) generateTestRunName(project *models.Project, branchName
         
         return name
 }
+
+// StartTestRun starts a test run execution and creates a new time interval
+func (s *TestRunService) StartTestRun(id int) (*models.TestRun, error) {
+        // Check if test run exists and is in valid state
+        testRun, err := s.repo.GetByID(id)
+        if err != nil {
+                return nil, err
+        }
+        if testRun == nil {
+                return nil, fmt.Errorf("test run not found")
+        }
+
+        // Check if test run is already running
+        hasActive, err := s.intervalRepo.HasActiveInterval(id)
+        if err != nil {
+                return nil, err
+        }
+        if hasActive {
+                return nil, fmt.Errorf("test run is already running")
+        }
+
+        // Update test run status to "In Progress" and set started_at if not already set
+        status := "In Progress"
+        req := models.UpdateTestRunRequest{
+                Status: &status,
+        }
+        if testRun.StartedAt == nil {
+                now := time.Now()
+                req.StartedAt = &now
+        }
+
+        testRun, err = s.repo.Update(id, req)
+        if err != nil {
+                return nil, err
+        }
+
+        // Create new execution interval
+        _, err = s.intervalRepo.Create(id)
+        if err != nil {
+                return nil, fmt.Errorf("failed to create execution interval: %w", err)
+        }
+
+        return testRun, nil
+}
+
+// PauseTestRun pauses a test run execution and closes the current interval
+func (s *TestRunService) PauseTestRun(id int) (*models.TestRun, error) {
+        // Check if test run exists and is running
+        testRun, err := s.repo.GetByID(id)
+        if err != nil {
+                return nil, err
+        }
+        if testRun == nil {
+                return nil, fmt.Errorf("test run not found")
+        }
+
+        // Check if test run has active interval
+        hasActive, err := s.intervalRepo.HasActiveInterval(id)
+        if err != nil {
+                return nil, err
+        }
+        if !hasActive {
+                return nil, fmt.Errorf("test run is not currently running")
+        }
+
+        // Close the active interval
+        err = s.intervalRepo.CloseActiveInterval(id)
+        if err != nil {
+                return nil, err
+        }
+
+        // Update test run status to "Not Started" (paused state)
+        status := "Not Started"
+        req := models.UpdateTestRunRequest{
+                Status: &status,
+        }
+
+        return s.repo.Update(id, req)
+}
+
+// FinishTestRun finishes a test run execution and closes any active intervals
+func (s *TestRunService) FinishTestRun(id int) (*models.TestRun, error) {
+        // Check if test run exists
+        testRun, err := s.repo.GetByID(id)
+        if err != nil {
+                return nil, err
+        }
+        if testRun == nil {
+                return nil, fmt.Errorf("test run not found")
+        }
+
+        // Close any active interval
+        hasActive, err := s.intervalRepo.HasActiveInterval(id)
+        if err != nil {
+                return nil, err
+        }
+        if hasActive {
+                err = s.intervalRepo.CloseActiveInterval(id)
+                if err != nil {
+                        return nil, err
+                }
+        }
+
+        // Update test run status to "Completed" and set completed_at
+        now := time.Now()
+        status := "Completed"
+        req := models.UpdateTestRunRequest{
+                Status:      &status,
+                CompletedAt: &now,
+        }
+
+        return s.repo.Update(id, req)
+}
+
+// GetTestRunWithTimeTracking returns a test run with execution intervals and total time
+func (s *TestRunService) GetTestRunWithTimeTracking(id int) (*models.TestRun, error) {
+        testRun, err := s.repo.GetByID(id)
+        if err != nil {
+                return nil, err
+        }
+        if testRun == nil {
+                return nil, fmt.Errorf("test run not found")
+        }
+
+        // Load execution intervals
+        intervals, err := s.intervalRepo.GetByTestRunID(id)
+        if err != nil {
+                return nil, err
+        }
+        testRun.Intervals = intervals
+
+        // Calculate total execution time
+        totalTime, err := s.intervalRepo.CalculateTotalExecutionTime(id)
+        if err != nil {
+                return nil, err
+        }
+        testRun.TotalExecutionTime = &totalTime
+
+        return testRun, nil
+}
+

@@ -113,3 +113,33 @@ func (h *Handler) deleteTestRun(w http.ResponseWriter, r *http.Request, id int) 
 
         w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *Handler) startTestRun(w http.ResponseWriter, r *http.Request, id int) {
+        testRun, err := h.testRunService.StartTestRun(id)
+        if err != nil {
+                h.writeJSONError(w, err.Error(), http.StatusBadRequest)
+                return
+        }
+
+        h.writeJSONResponse(w, testRun)
+}
+
+func (h *Handler) pauseTestRun(w http.ResponseWriter, r *http.Request, id int) {
+        testRun, err := h.testRunService.PauseTestRun(id)
+        if err != nil {
+                h.writeJSONError(w, err.Error(), http.StatusBadRequest)
+                return
+        }
+
+        h.writeJSONResponse(w, testRun)
+}
+
+func (h *Handler) finishTestRun(w http.ResponseWriter, r *http.Request, id int) {
+        testRun, err := h.testRunService.FinishTestRun(id)
+        if err != nil {
+                h.writeJSONError(w, err.Error(), http.StatusBadRequest)
+                return
+        }
+
+        h.writeJSONResponse(w, testRun)
+}

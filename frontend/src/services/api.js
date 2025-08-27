@@ -66,6 +66,9 @@ export const api = {
   createTestRun: (data) => apiClient.post('/test-runs', data),
   updateTestRun: (id, data) => apiClient.put(`/test-runs/${id}`, data),
   deleteTestRun: (id) => apiClient.delete(`/test-runs/${id}`),
+  startTestRun: (id) => apiClient.post(`/test-runs/${id}/start`),
+  pauseTestRun: (id) => apiClient.post(`/test-runs/${id}/pause`),
+  finishTestRun: (id) => apiClient.post(`/test-runs/${id}/finish`),
   updateTestRunCase: (runId, caseId, data) => apiClient.put(`/test-runs/${runId}/cases/${caseId}`, data),
 
   // Helper methods for test runs
