@@ -35,6 +35,8 @@ func (h *Handler) testRunAPIHandler(w http.ResponseWriter, r *http.Request) {
                 h.getTestRun(w, r, id)
         case "PUT":
                 h.updateTestRun(w, r, id)
+        case "DELETE":
+                h.deleteTestRun(w, r, id)
         default:
                 h.writeJSONError(w, "Method not allowed", http.StatusMethodNotAllowed)
         }
@@ -100,4 +102,14 @@ func (h *Handler) updateTestRun(w http.ResponseWriter, r *http.Request, id int) 
         }
 
         h.writeJSONResponse(w, testRun)
+}
+
+func (h *Handler) deleteTestRun(w http.ResponseWriter, r *http.Request, id int) {
+        err := h.testRunService.DeleteTestRun(id)
+        if err != nil {
+                h.writeJSONError(w, err.Error(), http.StatusInternalServerError)
+                return
+        }
+
+        w.WriteHeader(http.StatusNoContent)
 }
