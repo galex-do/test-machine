@@ -74,9 +74,14 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="testRun in filteredTestRuns" :key="testRun.id" @click="viewTestRun(testRun.id)" style="cursor: pointer;">
+                <tr v-for="testRun in filteredTestRuns" :key="testRun.id">
                   <td>
-                    <strong>{{ testRun.name }}</strong>
+                    <router-link 
+                      :to="`/test-run/${testRun.id}`" 
+                      class="text-decoration-none fw-bold text-primary"
+                    >
+                      {{ testRun.name }}
+                    </router-link>
                     <small v-if="testRun.description" class="text-muted d-block">{{ testRun.description }}</small>
                   </td>
                   <td>
@@ -112,21 +117,21 @@
                   </td>
                   <td>
                     <div class="btn-group btn-group-sm" role="group">
-                      <button 
-                        @click.stop="viewTestRun(testRun.id)" 
-                        class="btn btn-outline-primary"
-                        title="View Details"
-                      >
-                        <i class="fas fa-eye"></i>
-                      </button>
                       <router-link 
                         :to="`/test-runs/${testRun.id}/edit`"
                         class="btn btn-outline-secondary"
                         title="Edit"
-                        @click.stop
                       >
                         <i class="fas fa-edit"></i>
                       </router-link>
+                      <button 
+                        v-if="testRun.status === 'Not Started'"
+                        @click="deleteTestRun(testRun.id, testRun.name)"
+                        class="btn btn-outline-danger"
+                        title="Delete Test Run"
+                      >
+                        <i class="fas fa-trash"></i>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -197,9 +202,6 @@ export default {
       }
     },
 
-    viewTestRun(id) {
-      this.$router.push(`/test-run/${id}`)
-    },
 
     getStatusBadgeClass(status) {
       const classes = {
@@ -239,6 +241,21 @@ export default {
       const executed = testRun.test_cases.filter(tc => tc && tc.status && tc.status !== 'Not Executed').length
       
       return `${executed}/${total}`
+    },
+
+    async deleteTestRun(id, name) {
+      const confirmed = confirm(`Are you sure you want to delete the test run "${name}"? This action cannot be undone.`)
+      
+      if (confirmed) {
+        try {
+          await api.deleteTestRun(id)
+          showAlert('Test run deleted successfully', 'success')
+          await this.loadTestRuns() // Refresh the list
+        } catch (error) {
+          console.error('Error deleting test run:', error)
+          showAlert('Failed to delete test run. Please try again.', 'error')
+        }
+      }
     }
   }
 }
