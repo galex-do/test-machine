@@ -410,40 +410,28 @@ export default {
         // Fix: use test_case_id instead of id (test_run_case id)
         this.selectedTestCases = testRun.test_cases?.map(tc => tc.test_case_id || tc.test_case?.id) || []
         
-        // Remove debug logs - issue fixed
-        console.log('Selected test cases loaded:', this.selectedTestCases)
 
         // Load project-specific data
         if (this.form.project_id) {
           await this.onProjectChange()
         }
 
-        // Debug after loading test suites
-        console.log('Test suites loaded:', this.testSuites)
-        console.log('All test case IDs available:')
+        // Check for missing test cases and clean up
         const allAvailableIds = []
         this.testSuites.forEach(suite => {
           const suiteIds = suite.test_cases?.map(tc => tc.id) || []
-          console.log(`Suite ${suite.name}:`, suiteIds)
           allAvailableIds.push(...suiteIds)
         })
-        console.log('All available test case IDs:', allAvailableIds)
-        console.log('Selected test case IDs from test run:', this.selectedTestCases)
         
-        // Check for missing test cases
+        // Remove any test case IDs that no longer exist
         const missingIds = this.selectedTestCases.filter(id => !allAvailableIds.includes(id))
         if (missingIds.length > 0) {
-          console.warn('WARNING: Test run references test cases that no longer exist:', missingIds)
-          // Remove missing test case IDs
           this.selectedTestCases = this.selectedTestCases.filter(id => allAvailableIds.includes(id))
-          console.log('Cleaned selected test cases:', this.selectedTestCases)
         }
 
         // Force reactivity update for checkboxes after test suites are loaded
         this.$nextTick(() => {
-          // Trigger a reactive update by reassigning the array
           this.selectedTestCases = [...this.selectedTestCases]
-          console.log('After nextTick, selected test cases:', this.selectedTestCases)
         })
 
       } catch (error) {
@@ -462,16 +450,13 @@ export default {
       try {
         // Load test suites for project
         const response = await api.getTestSuites(this.form.project_id)
-        console.log('Raw API response for test suites:', response)
         
         // Deep clone to preserve test_cases arrays
         this.testSuites = JSON.parse(JSON.stringify(response || []))
-        console.log('Test suites after assignment:', this.testSuites)
 
         // Expand all suites by default when loading
         this.testSuites.forEach(suite => {
           this.expandedSuites.add(suite.id)
-          console.log(`Suite ${suite.name} test cases:`, suite.test_cases)
         })
 
         // Load git references if project has repository
@@ -602,18 +587,11 @@ export default {
     },
 
     toggleTestCase(testCaseId) {
-      console.log('Toggling test case:', testCaseId)
-      console.log('Current selected before toggle:', [...this.selectedTestCases])
-      
       const index = this.selectedTestCases.indexOf(testCaseId)
       if (index > -1) {
-        // Remove test case
         this.selectedTestCases.splice(index, 1)
-        console.log('Removed test case, new selection:', [...this.selectedTestCases])
       } else {
-        // Add test case
         this.selectedTestCases.push(testCaseId)
-        console.log('Added test case, new selection:', [...this.selectedTestCases])
       }
     },
 
