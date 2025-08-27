@@ -410,9 +410,8 @@ export default {
         // Fix: use test_case_id instead of id (test_run_case id)
         this.selectedTestCases = testRun.test_cases?.map(tc => tc.test_case_id || tc.test_case?.id) || []
         
-        console.log('Loaded test run data:', testRun)
-        console.log('Raw test_cases from API:', testRun.test_cases)
-        console.log('Selected test cases from test run:', this.selectedTestCases)
+        // Remove debug logs - issue fixed
+        console.log('Selected test cases loaded:', this.selectedTestCases)
 
         // Load project-specific data
         if (this.form.project_id) {
