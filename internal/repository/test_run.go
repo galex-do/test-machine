@@ -179,6 +179,12 @@ func (r *TestRunRepository) Create(req models.CreateTestRunRequest) (*models.Tes
 
 // Update updates a test run
 func (r *TestRunRepository) Update(id int, req models.UpdateTestRunRequest) (*models.TestRun, error) {
+        tx, err := r.db.Begin()
+        if err != nil {
+                return nil, fmt.Errorf("failed to begin transaction: %w", err)
+        }
+        defer tx.Rollback()
+
         setParts := []string{}
         args := []interface{}{}
         argIndex := 1
@@ -191,6 +197,31 @@ func (r *TestRunRepository) Update(id int, req models.UpdateTestRunRequest) (*mo
         if req.Description != nil {
                 setParts = append(setParts, fmt.Sprintf("description = $%d", argIndex))
                 args = append(args, *req.Description)
+                argIndex++
+        }
+        if req.ProjectID != nil {
+                setParts = append(setParts, fmt.Sprintf("project_id = $%d", argIndex))
+                args = append(args, *req.ProjectID)
+                argIndex++
+        }
+        if req.RepositoryID != nil {
+                setParts = append(setParts, fmt.Sprintf("repository_id = $%d", argIndex))
+                args = append(args, *req.RepositoryID)
+                argIndex++
+        }
+        if req.BranchName != nil {
+                setParts = append(setParts, fmt.Sprintf("branch_name = $%d", argIndex))
+                args = append(args, *req.BranchName)
+                argIndex++
+        }
+        if req.TagName != nil {
+                setParts = append(setParts, fmt.Sprintf("tag_name = $%d", argIndex))
+                args = append(args, *req.TagName)
+                argIndex++
+        }
+        if req.CreatedBy != nil {
+                setParts = append(setParts, fmt.Sprintf("created_by = $%d", argIndex))
+                args = append(args, *req.CreatedBy)
                 argIndex++
         }
         if req.Status != nil {
@@ -209,26 +240,50 @@ func (r *TestRunRepository) Update(id int, req models.UpdateTestRunRequest) (*mo
                 argIndex++
         }
 
-        if len(setParts) == 0 {
-                return r.GetByID(id)
-        }
-
+        // Always update the updated_at timestamp
         setParts = append(setParts, fmt.Sprintf("updated_at = $%d", argIndex))
         args = append(args, time.Now())
         argIndex++
 
         args = append(args, id)
 
-        // Build proper UPDATE query with all SET parts
-        query := fmt.Sprintf(`
-                UPDATE test_runs 
-                SET %s
-                WHERE id = $%d
-        `, strings.Join(setParts, ", "), argIndex)
+        // Update test run if there are changes
+        if len(setParts) > 1 { // More than just updated_at
+                query := fmt.Sprintf(`
+                        UPDATE test_runs 
+                        SET %s
+                        WHERE id = $%d
+                `, strings.Join(setParts, ", "), argIndex)
 
-        _, err := r.db.Exec(query, args...)
+                _, err = tx.Exec(query, args...)
+                if err != nil {
+                        return nil, fmt.Errorf("failed to update test run: %w", err)
+                }
+        }
+
+        // Update test cases if provided
+        if len(req.TestCaseIDs) > 0 {
+                // First, remove all existing test cases for this run
+                _, err = tx.Exec("DELETE FROM test_run_cases WHERE test_run_id = $1", id)
+                if err != nil {
+                        return nil, fmt.Errorf("failed to remove existing test cases: %w", err)
+                }
+
+                // Then add the new test cases
+                for _, testCaseID := range req.TestCaseIDs {
+                        _, err = tx.Exec(`
+                                INSERT INTO test_run_cases (test_run_id, test_case_id)
+                                VALUES ($1, $2)
+                        `, id, testCaseID)
+                        if err != nil {
+                                return nil, fmt.Errorf("failed to add test case %d to run: %w", testCaseID, err)
+                        }
+                }
+        }
+
+        err = tx.Commit()
         if err != nil {
-                return nil, fmt.Errorf("failed to update test run: %w", err)
+                return nil, fmt.Errorf("failed to commit transaction: %w", err)
         }
 
         return r.GetByID(id)

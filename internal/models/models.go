@@ -180,11 +180,17 @@ type CreateTestRunRequest struct {
 
 // UpdateTestRunRequest represents the request to update a test run
 type UpdateTestRunRequest struct {
-        Name        *string    `json:"name,omitempty"`
-        Description *string    `json:"description,omitempty"`
-        Status      *string    `json:"status,omitempty"`
-        StartedAt   *time.Time `json:"started_at,omitempty"`
-        CompletedAt *time.Time `json:"completed_at,omitempty"`
+        Name         *string    `json:"name,omitempty"`
+        Description  *string    `json:"description,omitempty"`
+        ProjectID    *int       `json:"project_id,omitempty"`
+        RepositoryID *int       `json:"repository_id,omitempty"`
+        BranchName   *string    `json:"branch_name,omitempty"`
+        TagName      *string    `json:"tag_name,omitempty"`
+        TestCaseIDs  []int      `json:"test_case_ids,omitempty"`
+        CreatedBy    *string    `json:"created_by,omitempty"`
+        Status       *string    `json:"status,omitempty"`
+        StartedAt    *time.Time `json:"started_at,omitempty"`
+        CompletedAt  *time.Time `json:"completed_at,omitempty"`
 }
 
 // UpdateTestRunCaseRequest represents the request to update a test case within a run
