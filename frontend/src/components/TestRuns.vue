@@ -246,7 +246,14 @@ export default {
         has_prev: false
       },
       allTestRuns: [], // Store all test runs for client-side filtering
-      testRunSortOptions: SORT_OPTION_SETS.TEST_RUNS
+      testRunSortOptions: [
+        { value: 'created_desc', label: 'Created Date (Newest First)' },
+        { value: 'created_asc', label: 'Created Date (Oldest First)' },
+        { value: 'name_asc', label: 'Name (A-Z)' },
+        { value: 'name_desc', label: 'Name (Z-A)' },
+        { value: 'status_desc', label: 'Status (High to Low)' },
+        { value: 'status_asc', label: 'Status (Low to High)' }
+      ]
     }
   },
   computed: {
