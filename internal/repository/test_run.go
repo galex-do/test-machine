@@ -26,14 +26,19 @@ func (r *TestRunRepository) GetAll() ([]models.TestRun, error) {
                        tr.branch_name, tr.tag_name, tr.status, tr.created_by, 
                        tr.started_at, tr.completed_at, tr.created_at, tr.updated_at,
                        p.id, p.name, p.description, p.created_at, p.updated_at,
+                       r.id, r.name, r.description, r.remote_url, r.default_branch, 
+                       r.synced_at, r.created_at, r.updated_at,
                        COALESCE(COUNT(trc.id), 0) as test_cases_count
                 FROM test_runs tr
                 JOIN projects p ON tr.project_id = p.id
+                LEFT JOIN repositories r ON tr.repository_id = r.id
                 LEFT JOIN test_run_cases trc ON tr.id = trc.test_run_id
                 GROUP BY tr.id, tr.name, tr.description, tr.project_id, tr.repository_id, 
                          tr.branch_name, tr.tag_name, tr.status, tr.created_by, 
                          tr.started_at, tr.completed_at, tr.created_at, tr.updated_at,
-                         p.id, p.name, p.description, p.created_at, p.updated_at
+                         p.id, p.name, p.description, p.created_at, p.updated_at,
+                         r.id, r.name, r.description, r.remote_url, r.default_branch, 
+                         r.synced_at, r.created_at, r.updated_at
                 ORDER BY tr.created_at DESC
         `
 
@@ -47,19 +52,50 @@ func (r *TestRunRepository) GetAll() ([]models.TestRun, error) {
         for rows.Next() {
                 var tr models.TestRun
                 var project models.Project
+                var repository models.Repository
                 var testCasesCount int
+                // Repository fields can be NULL, so use pointers
+                var repoID sql.NullInt32
+                var repoCreatedAt, repoUpdatedAt, repoSyncedAt sql.NullTime
+                var repoName, repoDescription, repoRemoteURL, repoDefaultBranch sql.NullString
+                
                 err = rows.Scan(
                         &tr.ID, &tr.Name, &tr.Description, &tr.ProjectID, &tr.RepositoryID,
                         &tr.BranchName, &tr.TagName, &tr.Status, &tr.CreatedBy,
                         &tr.StartedAt, &tr.CompletedAt, &tr.CreatedAt, &tr.UpdatedAt,
                         &project.ID, &project.Name, &project.Description, &project.CreatedAt, &project.UpdatedAt,
+                        &repoID, &repoName, &repoDescription, &repoRemoteURL, &repoDefaultBranch,
+                        &repoSyncedAt, &repoCreatedAt, &repoUpdatedAt,
                         &testCasesCount,
                 )
                 if err != nil {
                         return nil, fmt.Errorf("failed to scan test run: %w", err)
                 }
+                
                 tr.Project = &project
                 tr.TestCasesCount = &testCasesCount
+                
+                // Only populate repository if it exists
+                if repoID.Valid {
+                        repository.ID = int(repoID.Int32)
+                        repository.Name = repoName.String
+                        repository.Description = repoDescription.String
+                        repository.RemoteURL = repoRemoteURL.String
+                        if repoDefaultBranch.Valid {
+                                repository.DefaultBranch = &repoDefaultBranch.String
+                        }
+                        if repoSyncedAt.Valid {
+                                repository.SyncedAt = &repoSyncedAt.Time
+                        }
+                        if repoCreatedAt.Valid {
+                                repository.CreatedAt = repoCreatedAt.Time
+                        }
+                        if repoUpdatedAt.Valid {
+                                repository.UpdatedAt = repoUpdatedAt.Time
+                        }
+                        tr.Repository = &repository
+                }
+                
                 testRuns = append(testRuns, tr)
         }
 
