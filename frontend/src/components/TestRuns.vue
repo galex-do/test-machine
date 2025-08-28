@@ -89,9 +89,29 @@
                     <span class="badge bg-info">{{ testRun.project?.name || 'Unknown' }}</span>
                   </td>
                   <td>
-                    <span v-if="testRun.branch_name" class="badge bg-primary">
+                    <a 
+                      v-if="testRun.branch_name && testRun.repository?.remote_url" 
+                      :href="getGitReferenceUrl(testRun.repository.remote_url, testRun.branch_name)"
+                      target="_blank"
+                      class="badge bg-primary text-decoration-none"
+                      :title="`View ${testRun.branch_name} branch in repository`"
+                    >
+                      <i class="fas fa-code-branch"></i> {{ testRun.branch_name }}
+                      <i class="fas fa-external-link-alt ms-1" style="font-size: 0.75em;"></i>
+                    </a>
+                    <span v-else-if="testRun.branch_name" class="badge bg-primary">
                       <i class="fas fa-code-branch"></i> {{ testRun.branch_name }}
                     </span>
+                    <a 
+                      v-else-if="testRun.tag_name && testRun.repository?.remote_url"
+                      :href="getGitReferenceUrl(testRun.repository.remote_url, testRun.tag_name)"
+                      target="_blank"
+                      class="badge bg-warning text-decoration-none"
+                      :title="`View ${testRun.tag_name} tag in repository`"
+                    >
+                      <i class="fas fa-tag"></i> {{ testRun.tag_name }}
+                      <i class="fas fa-external-link-alt ms-1" style="font-size: 0.75em;"></i>
+                    </a>
                     <span v-else-if="testRun.tag_name" class="badge bg-warning">
                       <i class="fas fa-tag"></i> {{ testRun.tag_name }}
                     </span>
@@ -327,6 +347,30 @@ export default {
           showAlert('Failed to finish test run: ' + error.message, 'error')
         }
       }
+    },
+
+    getGitReferenceUrl(remoteUrl, reference) {
+      if (!remoteUrl || !reference) return '#'
+      
+      // Handle different Git hosting providers
+      let baseUrl = remoteUrl
+      
+      // Convert SSH to HTTPS if needed
+      if (baseUrl.startsWith('git@')) {
+        // git@github.com:user/repo.git -> https://github.com/user/repo
+        baseUrl = baseUrl
+          .replace(/^git@/, 'https://')
+          .replace(':', '/')
+          .replace(/\.git$/, '')
+      }
+      
+      // Remove .git extension if present
+      if (baseUrl.endsWith('.git')) {
+        baseUrl = baseUrl.slice(0, -4)
+      }
+      
+      // Add tree path for branch/tag
+      return `${baseUrl}/tree/${reference}`
     }
   }
 }
