@@ -80,8 +80,14 @@
 
     <!-- Test Suites List -->
     <div class="card">
-      <div class="card-header">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <h5><i class="fas fa-layer-group"></i> Test Suites</h5>
+        <SortBy 
+          :sortOptions="testSuiteSortOptions"
+          :defaultSort="sortBy"
+          componentId="test-suites"
+          @sort-changed="handleSortChange"
+        />
       </div>
       <div class="card-body">
         <div v-if="loading" v-html="showLoading()"></div>
@@ -163,16 +169,19 @@
 <script>
 import { api } from '../services/api.js'
 import { formatDate, showAlert, showLoading, truncateText } from '../utils/helpers.js'
+import { applySorting, SORT_OPTION_SETS } from '../utils/sortUtils.js'
 import TestSuiteModal from './modals/TestSuiteModal.vue'
 import ProjectModal from './modals/ProjectModal.vue'
 import Pagination from './Pagination.vue'
+import SortBy from './SortBy.vue'
 
 export default {
   name: 'ProjectDetail',
   components: {
     TestSuiteModal,
     ProjectModal,
-    Pagination
+    Pagination,
+    SortBy
   },
   props: {
     id: {
@@ -189,6 +198,7 @@ export default {
       showProjectModal: false,
       selectedTestSuite: null,
       syncing: false,
+      sortBy: 'created_desc',
       pagination: {
         page: 1,
         page_size: 25,
@@ -196,7 +206,9 @@ export default {
         total_pages: 1,
         has_next: false,
         has_prev: false
-      }
+      },
+      allTestSuites: [], // Store all test suites for sorting and pagination
+      testSuiteSortOptions: SORT_OPTION_SETS.TEST_SUITES
     }
   },
   computed: {
@@ -230,37 +242,55 @@ export default {
         this.project = projectData
         
         // Ensure testSuites is always an array
-        const testSuitesArray = Array.isArray(allTestSuites) ? allTestSuites : []
-        
-        // Simulate pagination for now
-        const startIndex = (this.pagination.page - 1) * this.pagination.page_size
-        const endIndex = startIndex + this.pagination.page_size
-        
-        // Update pagination info
-        this.pagination.total = testSuitesArray.length
-        this.pagination.total_pages = Math.ceil(testSuitesArray.length / this.pagination.page_size)
-        this.pagination.has_next = this.pagination.page < this.pagination.total_pages
-        this.pagination.has_prev = this.pagination.page > 1
-        
-        // Get current page data
-        this.testSuites = testSuitesArray.slice(startIndex, endIndex)
+        this.allTestSuites = Array.isArray(allTestSuites) ? allTestSuites : []
+        this.applyCurrentSorting()
       } catch (error) {
         showAlert('Error loading project data: ' + error.message, 'danger')
+        this.allTestSuites = []
         this.testSuites = [] // Ensure testSuites is always an array
       } finally {
         this.loading = false
       }
     },
 
+    handleSortChange(newSortBy) {
+      this.sortBy = newSortBy
+      this.pagination.page = 1 // Reset to first page when sorting changes
+      this.applyCurrentSorting()
+    },
+
+    applyCurrentSorting() {
+      if (!this.allTestSuites || !Array.isArray(this.allTestSuites)) {
+        this.testSuites = []
+        return
+      }
+
+      // Use the utility function to sort the data
+      const sortedSuites = applySorting(this.allTestSuites, this.sortBy)
+
+      // Apply pagination
+      const startIndex = (this.pagination.page - 1) * this.pagination.page_size
+      const endIndex = startIndex + this.pagination.page_size
+      
+      // Update pagination info
+      this.pagination.total = sortedSuites.length
+      this.pagination.total_pages = Math.ceil(sortedSuites.length / this.pagination.page_size)
+      this.pagination.has_next = this.pagination.page < this.pagination.total_pages
+      this.pagination.has_prev = this.pagination.page > 1
+      
+      // Get current page data
+      this.testSuites = sortedSuites.slice(startIndex, endIndex)
+    },
+
     changePage(page) {
       this.pagination.page = page
-      this.loadData()
+      this.applyCurrentSorting()
     },
 
     changePageSize(pageSize) {
       this.pagination.page_size = pageSize
       this.pagination.page = 1 // Reset to first page
-      this.loadData()
+      this.applyCurrentSorting()
     },
 
     editProject() {

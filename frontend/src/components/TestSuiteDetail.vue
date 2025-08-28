@@ -35,17 +35,12 @@
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5><i class="fas fa-list-check"></i> Test Cases</h5>
-        <div class="d-flex align-items-center">
-          <label for="sortBy" class="form-label me-2 mb-0">Sort by:</label>
-          <select class="form-select form-select-sm" id="sortBy" v-model="sortBy" @change="applySorting" style="width: auto;">
-            <option value="created_desc">Created Date (Newest First)</option>
-            <option value="created_asc">Created Date (Oldest First)</option>
-            <option value="title_asc">Name (A-Z)</option>
-            <option value="title_desc">Name (Z-A)</option>
-            <option value="priority_desc">Priority (Critical to Low)</option>
-            <option value="priority_asc">Priority (Low to Critical)</option>
-          </select>
-        </div>
+        <SortBy 
+          :sortOptions="testCaseSortOptions"
+          :defaultSort="sortBy"
+          componentId="test-cases"
+          @sort-changed="handleSortChange"
+        />
       </div>
       <div class="card-body">
         <div v-if="loading" v-html="showLoading()"></div>
@@ -140,16 +135,19 @@
 <script>
 import { api } from '../services/api.js'
 import { formatDate, showAlert, showLoading, truncateText, getStatusBadgeClass, getPriorityBadgeClass } from '../utils/helpers.js'
+import { applySorting, SORT_OPTION_SETS } from '../utils/sortUtils.js'
 import TestCaseModal from './modals/TestCaseModal.vue'
 import TestSuiteModal from './modals/TestSuiteModal.vue'
 import Pagination from './Pagination.vue'
+import SortBy from './SortBy.vue'
 
 export default {
   name: 'TestSuiteDetail',
   components: {
     TestCaseModal,
     TestSuiteModal,
-    Pagination
+    Pagination,
+    SortBy
   },
   props: {
     pid: {
@@ -178,7 +176,8 @@ export default {
         has_next: false,
         has_prev: false
       },
-      allTestCases: [] // Store all test cases for sorting and pagination
+      allTestCases: [], // Store all test cases for sorting and pagination
+      testCaseSortOptions: SORT_OPTION_SETS.TEST_CASES
     }
   },
   computed: {
@@ -188,11 +187,6 @@ export default {
     }
   },
   watch: {
-    sortBy() {
-      // Reset to first page when sorting changes
-      this.pagination.page = 1
-      this.applySorting()
-    },
     sid() {
       this.loadData()
     }
@@ -216,7 +210,7 @@ export default {
         ])
         this.testSuite = testSuiteData
         this.allTestCases = Array.isArray(testCasesData) ? testCasesData : []
-        this.applySorting()
+        this.applyCurrentSorting()
       } catch (error) {
         showAlert('Error loading test suite data: ' + error.message, 'danger')
         this.allTestCases = []
@@ -226,36 +220,20 @@ export default {
       }
     },
 
-    applySorting() {
+    handleSortChange(newSortBy) {
+      this.sortBy = newSortBy
+      this.pagination.page = 1 // Reset to first page when sorting changes
+      this.applyCurrentSorting()
+    },
+
+    applyCurrentSorting() {
       if (!this.allTestCases || !Array.isArray(this.allTestCases)) {
         this.testCases = []
         return
       }
 
-      let sortedCases = [...this.allTestCases]
-      
-      switch (this.sortBy) {
-        case 'created_asc':
-          sortedCases = sortedCases.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-          break
-        case 'created_desc':
-          sortedCases = sortedCases.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-          break
-        case 'title_asc':
-          sortedCases = sortedCases.sort((a, b) => a.title.localeCompare(b.title))
-          break
-        case 'title_desc':
-          sortedCases = sortedCases.sort((a, b) => b.title.localeCompare(a.title))
-          break
-        case 'priority_desc':
-          sortedCases = sortedCases.sort((a, b) => this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority))
-          break
-        case 'priority_asc':
-          sortedCases = sortedCases.sort((a, b) => this.getPriorityValue(a.priority) - this.getPriorityValue(b.priority))
-          break
-        default:
-          break
-      }
+      // Use the utility function to sort the data
+      const sortedCases = applySorting(this.allTestCases, this.sortBy)
 
       // Apply pagination
       const startIndex = (this.pagination.page - 1) * this.pagination.page_size
@@ -273,13 +251,13 @@ export default {
 
     changePage(page) {
       this.pagination.page = page
-      this.applySorting()
+      this.applyCurrentSorting()
     },
 
     changePageSize(pageSize) {
       this.pagination.page_size = pageSize
       this.pagination.page = 1 // Reset to first page
-      this.applySorting()
+      this.applyCurrentSorting()
     },
 
     showCreateTestCaseModal() {
@@ -329,16 +307,6 @@ export default {
       this.closeTestSuiteModal()
       this.loadData()
       showAlert('Test suite updated successfully!', 'success')
-    },
-
-    getPriorityValue(priority) {
-      const priorityMap = {
-        'Critical': 4,
-        'High': 3,
-        'Medium': 2,
-        'Low': 1
-      }
-      return priorityMap[priority] || 0
     }
   }
 }
