@@ -50,6 +50,15 @@
 
       <!-- Test Runs Table -->
       <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5><i class="fas fa-play-circle"></i> Test Runs</h5>
+          <SortBy 
+            :sortOptions="testRunSortOptions"
+            :defaultSort="sortBy"
+            componentId="test-runs"
+            @sort-changed="handleSortChange"
+          />
+        </div>
         <div class="card-body">
           <div v-if="filteredTestRuns.length === 0" class="text-center py-4 text-muted">
             <i class="fas fa-inbox fa-3x mb-3"></i>
@@ -210,12 +219,15 @@
 <script>
 import api from '../services/api.js'
 import { formatDate, showAlert } from '../utils/helpers.js'
+import { applySorting, SORT_OPTION_SETS } from '../utils/sortUtils.js'
 import Pagination from './Pagination.vue'
+import SortBy from './SortBy.vue'
 
 export default {
   name: 'TestRuns',
   components: {
-    Pagination
+    Pagination,
+    SortBy
   },
   data() {
     return {
@@ -224,6 +236,7 @@ export default {
       error: null,
       searchQuery: '',
       statusFilter: '',
+      sortBy: 'created_desc',
       pagination: {
         page: 1,
         page_size: 25,
@@ -232,7 +245,8 @@ export default {
         has_next: false,
         has_prev: false
       },
-      allTestRuns: [] // Store all test runs for client-side filtering
+      allTestRuns: [], // Store all test runs for client-side filtering
+      testRunSortOptions: SORT_OPTION_SETS.TEST_RUNS
     }
   },
   computed: {
@@ -288,6 +302,9 @@ export default {
           filteredRuns = filteredRuns.filter(run => run.status === this.statusFilter)
         }
         
+        // Apply sorting
+        filteredRuns = applySorting(filteredRuns, this.sortBy)
+        
         // Update pagination info
         this.pagination.total = filteredRuns.length
         this.pagination.total_pages = Math.ceil(filteredRuns.length / this.pagination.page_size)
@@ -312,6 +329,12 @@ export default {
     changePageSize(pageSize) {
       this.pagination.page_size = pageSize
       this.pagination.page = 1 // Reset to first page
+      this.loadTestRuns()
+    },
+
+    handleSortChange(newSortBy) {
+      this.sortBy = newSortBy
+      this.pagination.page = 1 // Reset to first page when sorting changes
       this.loadTestRuns()
     },
 
