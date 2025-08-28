@@ -67,6 +67,7 @@
                   <th>Name</th>
                   <th>Project</th>
                   <th>Git Reference</th>
+                  <th>Test Cases</th>
                   <th>Status</th>
                   <th>Progress</th>
                   <th>Created</th>
@@ -95,6 +96,11 @@
                       <i class="fas fa-tag"></i> {{ testRun.tag_name }}
                     </span>
                     <span v-else class="text-muted">-</span>
+                  </td>
+                  <td>
+                    <span class="badge bg-light text-dark">
+                      <i class="fas fa-list-check"></i> {{ testRun.test_cases?.length || 0 }}
+                    </span>
                   </td>
                   <td>
                     <span :class="getStatusBadgeClass(testRun.status)">
