@@ -106,14 +106,13 @@
         </div>
       </div>
         
-        <!-- Pagination -->
-        <div class="card-footer" v-if="!loading && sortedProjects.length > 0">
-          <Pagination 
-            :pagination="pagination"
-            @page-changed="changePage"
-            @page-size-changed="changePageSize"
-          />
-        </div>
+      <!-- Pagination -->
+      <div class="card-footer" v-if="!loading && sortedProjects.length > 0">
+        <Pagination 
+          :pagination="pagination"
+          @page-changed="changePage"
+          @page-size-changed="changePageSize"
+        />
       </div>
     </div>
 
