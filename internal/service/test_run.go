@@ -60,11 +60,39 @@ func (s *TestRunService) CreateTestRun(req models.CreateTestRunRequest) (*models
 
 // UpdateTestRun updates a test run
 func (s *TestRunService) UpdateTestRun(id int, req models.UpdateTestRunRequest) (*models.TestRun, error) {
+        // Check if test run exists and validate status
+        testRun, err := s.repo.GetByID(id)
+        if err != nil {
+                return nil, err
+        }
+        if testRun == nil {
+                return nil, fmt.Errorf("test run not found")
+        }
+
+        // Prevent editing completed test runs
+        if testRun.Status == "Completed" {
+                return nil, fmt.Errorf("cannot edit completed test runs")
+        }
+
         return s.repo.Update(id, req)
 }
 
 // DeleteTestRun deletes a test run
 func (s *TestRunService) DeleteTestRun(id int) error {
+        // Check if test run exists and validate status
+        testRun, err := s.repo.GetByID(id)
+        if err != nil {
+                return err
+        }
+        if testRun == nil {
+                return fmt.Errorf("test run not found")
+        }
+
+        // Only allow deleting test runs that haven't started
+        if testRun.Status != "Not Started" {
+                return fmt.Errorf("can only delete test runs that haven't started")
+        }
+
         return s.repo.Delete(id)
 }
 
@@ -180,6 +208,11 @@ func (s *TestRunService) FinishTestRun(id int) (*models.TestRun, error) {
         }
         if testRun == nil {
                 return nil, fmt.Errorf("test run not found")
+        }
+
+        // Only allow finishing test runs that are "In Progress"
+        if testRun.Status != "In Progress" {
+                return nil, fmt.Errorf("can only finish test runs that are in progress")
         }
 
         // Close any active interval
