@@ -253,9 +253,7 @@ export default {
         { value: 'created_desc', label: 'Created Date (Newest First)' },
         { value: 'created_asc', label: 'Created Date (Oldest First)' },
         { value: 'name_asc', label: 'Name (A-Z)' },
-        { value: 'name_desc', label: 'Name (Z-A)' },
-        { value: 'status_desc', label: 'Status (High to Low)' },
-        { value: 'status_asc', label: 'Status (Low to High)' }
+        { value: 'name_desc', label: 'Name (Z-A)' }
       ],
       testRunFilterOptions: FILTER_OPTION_SETS.TEST_RUNS
     }

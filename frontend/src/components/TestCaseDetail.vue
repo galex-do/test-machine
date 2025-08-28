@@ -84,14 +84,8 @@
 
     <!-- Test Steps -->
     <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
+      <div class="card-header">
         <h5><i class="fas fa-list-ol"></i> Test Steps</h5>
-        <SortBy 
-          :sortOptions="testStepSortOptions"
-          :defaultSort="sortBy"
-          componentId="test-steps"
-          @sort-changed="handleSortChange"
-        />
       </div>
       <div class="card-body">
         <div v-if="loading" v-html="showLoading()"></div>
@@ -163,19 +157,16 @@
 <script>
 import { api } from '../services/api.js'
 import { formatDate, showAlert, showLoading, truncateText, getStatusBadgeClass, getPriorityBadgeClass } from '../utils/helpers.js'
-import { applySorting } from '../utils/sortUtils.js'
 import TestStepModal from './modals/TestStepModal.vue'
 import TestCaseModal from './modals/TestCaseModal.vue'
 import Pagination from './Pagination.vue'
-import SortBy from './SortBy.vue'
 
 export default {
   name: 'TestCaseDetail',
   components: {
     TestStepModal,
     TestCaseModal,
-    Pagination,
-    SortBy
+    Pagination
   },
   props: {
     pid: {
@@ -199,13 +190,6 @@ export default {
       showModal: false,
       selectedTestStep: null,
       showTestCaseModal: false,
-      sortBy: 'step_number_asc',
-      testStepSortOptions: [
-        { value: 'step_number_asc', label: 'Step Number (1-10)' },
-        { value: 'step_number_desc', label: 'Step Number (10-1)' },
-        { value: 'created_desc', label: 'Created Date (Newest First)' },
-        { value: 'created_asc', label: 'Created Date (Oldest First)' }
-      ],
       pagination: {
         page: 1,
         page_size: 25,
@@ -247,8 +231,8 @@ export default {
         this.testCase = testCaseData
         
         const stepsArray = Array.isArray(testStepsData) ? testStepsData : []
-        this.allTestSteps = stepsArray
-        this.applyCurrentSorting()
+        this.allTestSteps = stepsArray.sort((a, b) => a.step_number - b.step_number)
+        this.applyPagination()
       } catch (error) {
         showAlert('Error loading test case data: ' + error.message, 'danger')
         this.allTestSteps = []
@@ -258,61 +242,35 @@ export default {
       }
     },
 
-    handleSortChange(newSortBy) {
-      this.sortBy = newSortBy
-      this.pagination.page = 1 // Reset to first page when sorting changes
-      this.applyCurrentSorting()
-    },
-
-    applyCurrentSorting() {
+    applyPagination() {
       if (!this.allTestSteps || !Array.isArray(this.allTestSteps)) {
         this.testSteps = []
         return
       }
 
-      let sortedSteps = [...this.allTestSteps]
-      
-      // Custom sorting for test steps
-      switch (this.sortBy) {
-        case 'step_number_asc':
-          sortedSteps = sortedSteps.sort((a, b) => a.step_number - b.step_number)
-          break
-        case 'step_number_desc':
-          sortedSteps = sortedSteps.sort((a, b) => b.step_number - a.step_number)
-          break
-        default:
-          // Use utility function for other sorts
-          sortedSteps = applySorting(this.allTestSteps, this.sortBy)
-      }
-
-      // Apply pagination
+      // Apply pagination (steps are already sorted by step_number)
       const startIndex = (this.pagination.page - 1) * this.pagination.page_size
       const endIndex = startIndex + this.pagination.page_size
       
       // Update pagination info
-      this.pagination.total = sortedSteps.length
-      this.pagination.total_pages = Math.ceil(sortedSteps.length / this.pagination.page_size)
+      this.pagination.total = this.allTestSteps.length
+      this.pagination.total_pages = Math.ceil(this.allTestSteps.length / this.pagination.page_size)
       this.pagination.has_next = this.pagination.page < this.pagination.total_pages
       this.pagination.has_prev = this.pagination.page > 1
       
       // Get current page data
-      this.testSteps = sortedSteps.slice(startIndex, endIndex)
-    },
-
-    applyPagination() {
-      // Deprecated - use applyCurrentSorting instead
-      this.applyCurrentSorting()
+      this.testSteps = this.allTestSteps.slice(startIndex, endIndex)
     },
 
     changePage(page) {
       this.pagination.page = page
-      this.applyCurrentSorting()
+      this.applyPagination()
     },
 
     changePageSize(pageSize) {
       this.pagination.page_size = pageSize
       this.pagination.page = 1 // Reset to first page
-      this.applyCurrentSorting()
+      this.applyPagination()
     },
 
     showCreateTestStepModal() {
