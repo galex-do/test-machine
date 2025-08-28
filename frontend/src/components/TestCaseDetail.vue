@@ -123,6 +123,14 @@
           </div>
         </div>
       </div>
+      
+      <!-- Pagination -->
+      <Pagination 
+        v-if="!loading && pagination.total > 0"
+        :pagination="pagination"
+        @page-changed="changePage"
+        @page-size-changed="changePageSize"
+      />
     </div>
 
     <!-- Test Step Modal -->
@@ -150,12 +158,14 @@ import { api } from '../services/api.js'
 import { formatDate, showAlert, showLoading, truncateText, getStatusBadgeClass, getPriorityBadgeClass } from '../utils/helpers.js'
 import TestStepModal from './modals/TestStepModal.vue'
 import TestCaseModal from './modals/TestCaseModal.vue'
+import Pagination from './Pagination.vue'
 
 export default {
   name: 'TestCaseDetail',
   components: {
     TestStepModal,
-    TestCaseModal
+    TestCaseModal,
+    Pagination
   },
   props: {
     pid: {
@@ -178,7 +188,16 @@ export default {
       loading: true,
       showModal: false,
       selectedTestStep: null,
-      showTestCaseModal: false
+      showTestCaseModal: false,
+      pagination: {
+        page: 1,
+        page_size: 25,
+        total: 0,
+        total_pages: 1,
+        has_next: false,
+        has_prev: false
+      },
+      allTestSteps: [] // Store all test steps for pagination
     }
   },
   computed: {
@@ -209,13 +228,48 @@ export default {
           api.getTestSteps(this.cid)
         ])
         this.testCase = testCaseData
-        this.testSteps = Array.isArray(testStepsData) ? testStepsData : []
+        
+        const stepsArray = Array.isArray(testStepsData) ? testStepsData : []
+        this.allTestSteps = stepsArray.sort((a, b) => a.step_number - b.step_number)
+        this.applyPagination()
       } catch (error) {
         showAlert('Error loading test case data: ' + error.message, 'danger')
-        this.testSteps = [] // Ensure testSteps is always an array
+        this.allTestSteps = []
+        this.testSteps = []
       } finally {
         this.loading = false
       }
+    },
+
+    applyPagination() {
+      if (!this.allTestSteps || !Array.isArray(this.allTestSteps)) {
+        this.testSteps = []
+        return
+      }
+
+      // Apply pagination
+      const startIndex = (this.pagination.page - 1) * this.pagination.page_size
+      const endIndex = startIndex + this.pagination.page_size
+      
+      // Update pagination info
+      this.pagination.total = this.allTestSteps.length
+      this.pagination.total_pages = Math.ceil(this.allTestSteps.length / this.pagination.page_size)
+      this.pagination.has_next = this.pagination.page < this.pagination.total_pages
+      this.pagination.has_prev = this.pagination.page > 1
+      
+      // Get current page data
+      this.testSteps = this.allTestSteps.slice(startIndex, endIndex)
+    },
+
+    changePage(page) {
+      this.pagination.page = page
+      this.applyPagination()
+    },
+
+    changePageSize(pageSize) {
+      this.pagination.page_size = pageSize
+      this.pagination.page = 1 // Reset to first page
+      this.applyPagination()
     },
 
     showCreateTestStepModal() {

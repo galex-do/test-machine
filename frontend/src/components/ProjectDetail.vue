@@ -131,6 +131,14 @@
           </table>
         </div>
       </div>
+      
+      <!-- Pagination -->
+      <Pagination 
+        v-if="!loading && pagination.total > 0"
+        :pagination="pagination"
+        @page-changed="changePage"
+        @page-size-changed="changePageSize"
+      />
     </div>
 
     <!-- Test Suite Modal -->
@@ -157,12 +165,14 @@ import { api } from '../services/api.js'
 import { formatDate, showAlert, showLoading, truncateText } from '../utils/helpers.js'
 import TestSuiteModal from './modals/TestSuiteModal.vue'
 import ProjectModal from './modals/ProjectModal.vue'
+import Pagination from './Pagination.vue'
 
 export default {
   name: 'ProjectDetail',
   components: {
     TestSuiteModal,
-    ProjectModal
+    ProjectModal,
+    Pagination
   },
   props: {
     id: {
@@ -178,7 +188,15 @@ export default {
       showTestSuiteModal: false,
       showProjectModal: false,
       selectedTestSuite: null,
-      syncing: false
+      syncing: false,
+      pagination: {
+        page: 1,
+        page_size: 25,
+        total: 0,
+        total_pages: 1,
+        has_next: false,
+        has_prev: false
+      }
     }
   },
   computed: {
@@ -205,18 +223,44 @@ export default {
     async loadData() {
       this.loading = true
       try {
-        const [projectData, testSuitesData] = await Promise.all([
+        const [projectData, allTestSuites] = await Promise.all([
           api.getProject(this.id),
           api.getTestSuites(this.id)
         ])
         this.project = projectData
-        this.testSuites = Array.isArray(testSuitesData) ? testSuitesData : []
+        
+        // Ensure testSuites is always an array
+        const testSuitesArray = Array.isArray(allTestSuites) ? allTestSuites : []
+        
+        // Simulate pagination for now
+        const startIndex = (this.pagination.page - 1) * this.pagination.page_size
+        const endIndex = startIndex + this.pagination.page_size
+        
+        // Update pagination info
+        this.pagination.total = testSuitesArray.length
+        this.pagination.total_pages = Math.ceil(testSuitesArray.length / this.pagination.page_size)
+        this.pagination.has_next = this.pagination.page < this.pagination.total_pages
+        this.pagination.has_prev = this.pagination.page > 1
+        
+        // Get current page data
+        this.testSuites = testSuitesArray.slice(startIndex, endIndex)
       } catch (error) {
         showAlert('Error loading project data: ' + error.message, 'danger')
         this.testSuites = [] // Ensure testSuites is always an array
       } finally {
         this.loading = false
       }
+    },
+
+    changePage(page) {
+      this.pagination.page = page
+      this.loadData()
+    },
+
+    changePageSize(pageSize) {
+      this.pagination.page_size = pageSize
+      this.pagination.page = 1 // Reset to first page
+      this.loadData()
     },
 
     editProject() {

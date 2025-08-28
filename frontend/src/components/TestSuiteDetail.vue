@@ -107,6 +107,14 @@
           </table>
         </div>
       </div>
+      
+      <!-- Pagination -->
+      <Pagination 
+        v-if="!loading && pagination.total > 0"
+        :pagination="pagination"
+        @page-changed="changePage"
+        @page-size-changed="changePageSize"
+      />
     </div>
 
     <!-- Test Case Modal -->
@@ -134,12 +142,14 @@ import { api } from '../services/api.js'
 import { formatDate, showAlert, showLoading, truncateText, getStatusBadgeClass, getPriorityBadgeClass } from '../utils/helpers.js'
 import TestCaseModal from './modals/TestCaseModal.vue'
 import TestSuiteModal from './modals/TestSuiteModal.vue'
+import Pagination from './Pagination.vue'
 
 export default {
   name: 'TestSuiteDetail',
   components: {
     TestCaseModal,
-    TestSuiteModal
+    TestSuiteModal,
+    Pagination
   },
   props: {
     pid: {
@@ -159,42 +169,36 @@ export default {
       showModal: false,
       selectedTestCase: null,
       showTestSuiteModal: false,
-      sortBy: 'created_desc'
+      sortBy: 'created_desc',
+      pagination: {
+        page: 1,
+        page_size: 25,
+        total: 0,
+        total_pages: 1,
+        has_next: false,
+        has_prev: false
+      },
+      allTestCases: [] // Store all test cases for sorting and pagination
     }
   },
   computed: {
     sortedTestCases() {
-      if (!this.testCases || !Array.isArray(this.testCases)) {
-        return []
-      }
-
-      const cases = [...this.testCases]
-      
-      switch (this.sortBy) {
-        case 'created_asc':
-          return cases.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-        case 'created_desc':
-          return cases.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        case 'title_asc':
-          return cases.sort((a, b) => a.title.localeCompare(b.title))
-        case 'title_desc':
-          return cases.sort((a, b) => b.title.localeCompare(a.title))
-        case 'priority_desc':
-          return cases.sort((a, b) => this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority))
-        case 'priority_asc':
-          return cases.sort((a, b) => this.getPriorityValue(a.priority) - this.getPriorityValue(b.priority))
-        default:
-          return cases
-      }
+      // For paginated results, we return the current page data already sorted
+      return this.testCases || []
+    }
+  },
+  watch: {
+    sortBy() {
+      // Reset to first page when sorting changes
+      this.pagination.page = 1
+      this.applySorting()
+    },
+    sid() {
+      this.loadData()
     }
   },
   mounted() {
     this.loadData()
-  },
-  watch: {
-    sid() {
-      this.loadData()
-    }
   },
   methods: {
     formatDate,
@@ -211,13 +215,71 @@ export default {
           api.getTestCases(this.sid)
         ])
         this.testSuite = testSuiteData
-        this.testCases = Array.isArray(testCasesData) ? testCasesData : []
+        this.allTestCases = Array.isArray(testCasesData) ? testCasesData : []
+        this.applySorting()
       } catch (error) {
         showAlert('Error loading test suite data: ' + error.message, 'danger')
-        this.testCases = [] // Ensure testCases is always an array
+        this.allTestCases = []
+        this.testCases = []
       } finally {
         this.loading = false
       }
+    },
+
+    applySorting() {
+      if (!this.allTestCases || !Array.isArray(this.allTestCases)) {
+        this.testCases = []
+        return
+      }
+
+      let sortedCases = [...this.allTestCases]
+      
+      switch (this.sortBy) {
+        case 'created_asc':
+          sortedCases = sortedCases.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+          break
+        case 'created_desc':
+          sortedCases = sortedCases.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          break
+        case 'title_asc':
+          sortedCases = sortedCases.sort((a, b) => a.title.localeCompare(b.title))
+          break
+        case 'title_desc':
+          sortedCases = sortedCases.sort((a, b) => b.title.localeCompare(a.title))
+          break
+        case 'priority_desc':
+          sortedCases = sortedCases.sort((a, b) => this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority))
+          break
+        case 'priority_asc':
+          sortedCases = sortedCases.sort((a, b) => this.getPriorityValue(a.priority) - this.getPriorityValue(b.priority))
+          break
+        default:
+          break
+      }
+
+      // Apply pagination
+      const startIndex = (this.pagination.page - 1) * this.pagination.page_size
+      const endIndex = startIndex + this.pagination.page_size
+      
+      // Update pagination info
+      this.pagination.total = sortedCases.length
+      this.pagination.total_pages = Math.ceil(sortedCases.length / this.pagination.page_size)
+      this.pagination.has_next = this.pagination.page < this.pagination.total_pages
+      this.pagination.has_prev = this.pagination.page > 1
+      
+      // Get current page data
+      this.testCases = sortedCases.slice(startIndex, endIndex)
+    },
+
+    changePage(page) {
+      this.pagination.page = page
+      this.applySorting()
+    },
+
+    changePageSize(pageSize) {
+      this.pagination.page_size = pageSize
+      this.pagination.page = 1 // Reset to first page
+      this.applySorting()
     },
 
     showCreateTestCaseModal() {

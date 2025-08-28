@@ -81,6 +81,14 @@
             </tbody>
           </table>
         </div>
+        
+        <!-- Pagination -->
+        <Pagination 
+          v-if="!loading && pagination.total > 0"
+          :pagination="pagination"
+          @page-changed="changePage"
+          @page-size-changed="changePageSize"
+        />
       </div>
     </div>
 
@@ -142,11 +150,13 @@
 import { api } from '../services/api.js'
 import { formatDate, showAlert, showLoading } from '../utils/helpers.js'
 import KeyModal from './modals/KeyModal.vue'
+import Pagination from './Pagination.vue'
 
 export default {
   name: 'Keys',
   components: {
-    KeyModal
+    KeyModal,
+    Pagination
   },
   data() {
     return {
@@ -157,7 +167,15 @@ export default {
       selectedKey: null,
       keyData: '',
       loadingKeyData: false,
-      keyDataError: ''
+      keyDataError: '',
+      pagination: {
+        page: 1,
+        page_size: 25,
+        total: 0,
+        total_pages: 1,
+        has_next: false,
+        has_prev: false
+      }
     }
   },
   mounted() {
@@ -170,14 +188,39 @@ export default {
     async loadKeys() {
       this.loading = true
       try {
-        const data = await api.getKeys()
-        this.keys = Array.isArray(data) ? data : []
+        const allKeys = await api.getKeys()
+        const keysArray = Array.isArray(allKeys) ? allKeys : []
+        
+        // Simulate pagination for now
+        const startIndex = (this.pagination.page - 1) * this.pagination.page_size
+        const endIndex = startIndex + this.pagination.page_size
+        
+        // Update pagination info
+        this.pagination.total = keysArray.length
+        this.pagination.total_pages = Math.ceil(keysArray.length / this.pagination.page_size)
+        this.pagination.has_next = this.pagination.page < this.pagination.total_pages
+        this.pagination.has_prev = this.pagination.page > 1
+        
+        // Get current page data
+        this.keys = keysArray.slice(startIndex, endIndex)
+        
       } catch (error) {
         showAlert('Error loading keys: ' + error.message, 'danger')
         this.keys = []
       } finally {
         this.loading = false
       }
+    },
+
+    changePage(page) {
+      this.pagination.page = page
+      this.loadKeys()
+    },
+
+    changePageSize(pageSize) {
+      this.pagination.page_size = pageSize
+      this.pagination.page = 1 // Reset to first page
+      this.loadKeys()
     },
 
     showCreateKeyModal() {
