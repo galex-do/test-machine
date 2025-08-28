@@ -339,11 +339,6 @@ export default {
         'Low': 1
       }
       return priorityMap[priority] || 0
-    },
-
-    applySorting() {
-      // The computed property will automatically re-sort when sortBy changes
-      // This method is here for any additional logic if needed
     }
   }
 }
