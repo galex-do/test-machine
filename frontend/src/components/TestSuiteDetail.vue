@@ -101,6 +101,7 @@
             </tbody>
           </table>
         </div>
+      </div>
       
       <!-- Pagination -->
       <div class="card-footer" v-if="!loading && pagination.total > 0">

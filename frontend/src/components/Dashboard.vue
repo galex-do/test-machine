@@ -104,6 +104,7 @@
             </tbody>
           </table>
         </div>
+      </div>
         
         <!-- Pagination -->
         <div class="card-footer" v-if="!loading && sortedProjects.length > 0">
