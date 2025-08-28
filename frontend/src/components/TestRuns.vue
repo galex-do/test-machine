@@ -135,7 +135,7 @@
                         <i class="fas fa-pause"></i>
                       </button>
                       <button 
-                        v-if="testRun.status === 'In Progress' || testRun.status === 'Not Started'"
+                        v-if="testRun.status === 'In Progress'"
                         @click="finishTestRun(testRun.id)"
                         class="btn btn-outline-primary"
                         title="Finish Test Run"
@@ -145,6 +145,7 @@
                       
                       <!-- Management Buttons -->
                       <router-link 
+                        v-if="testRun.status !== 'Completed'"
                         :to="`/test-runs/${testRun.id}/edit`"
                         class="btn btn-outline-secondary"
                         title="Edit"
