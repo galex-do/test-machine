@@ -25,9 +25,15 @@ func (r *TestRunRepository) GetAll() ([]models.TestRun, error) {
                 SELECT tr.id, tr.name, tr.description, tr.project_id, tr.repository_id, 
                        tr.branch_name, tr.tag_name, tr.status, tr.created_by, 
                        tr.started_at, tr.completed_at, tr.created_at, tr.updated_at,
-                       p.id, p.name, p.description, p.created_at, p.updated_at
+                       p.id, p.name, p.description, p.created_at, p.updated_at,
+                       COALESCE(COUNT(trc.id), 0) as test_cases_count
                 FROM test_runs tr
                 JOIN projects p ON tr.project_id = p.id
+                LEFT JOIN test_run_cases trc ON tr.id = trc.test_run_id
+                GROUP BY tr.id, tr.name, tr.description, tr.project_id, tr.repository_id, 
+                         tr.branch_name, tr.tag_name, tr.status, tr.created_by, 
+                         tr.started_at, tr.completed_at, tr.created_at, tr.updated_at,
+                         p.id, p.name, p.description, p.created_at, p.updated_at
                 ORDER BY tr.created_at DESC
         `
 
@@ -41,16 +47,19 @@ func (r *TestRunRepository) GetAll() ([]models.TestRun, error) {
         for rows.Next() {
                 var tr models.TestRun
                 var project models.Project
+                var testCasesCount int
                 err = rows.Scan(
                         &tr.ID, &tr.Name, &tr.Description, &tr.ProjectID, &tr.RepositoryID,
                         &tr.BranchName, &tr.TagName, &tr.Status, &tr.CreatedBy,
                         &tr.StartedAt, &tr.CompletedAt, &tr.CreatedAt, &tr.UpdatedAt,
                         &project.ID, &project.Name, &project.Description, &project.CreatedAt, &project.UpdatedAt,
+                        &testCasesCount,
                 )
                 if err != nil {
                         return nil, fmt.Errorf("failed to scan test run: %w", err)
                 }
                 tr.Project = &project
+                tr.TestCasesCount = &testCasesCount
                 testRuns = append(testRuns, tr)
         }
 

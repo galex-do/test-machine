@@ -131,6 +131,7 @@ type TestRun struct {
         Project      *Project           `json:"project,omitempty"`
         Repository   *Repository        `json:"repository,omitempty"`
         TestCases    []TestRunCase      `json:"test_cases,omitempty"`
+        TestCasesCount *int             `json:"test_cases_count,omitempty"`
         Intervals    []TestRunInterval  `json:"intervals,omitempty"`
         TotalExecutionTime *int         `json:"total_execution_time,omitempty"` // in seconds
 }

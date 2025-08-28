@@ -119,7 +119,7 @@
                   </td>
                   <td>
                     <span class="badge bg-light text-dark">
-                      <i class="fas fa-list-check"></i> {{ testRun.test_cases?.length || 0 }}
+                      <i class="fas fa-list-check"></i> {{ testRun.test_cases_count || 0 }}
                     </span>
                   </td>
                   <td>
