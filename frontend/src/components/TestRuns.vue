@@ -204,12 +204,13 @@
         </div>
         
         <!-- Pagination -->
-        <Pagination 
-          v-if="!loading && !error && pagination.total > 0"
-          :pagination="pagination"
-          @page-changed="changePage"
-          @page-size-changed="changePageSize"
-        />
+        <div class="card-footer" v-if="!loading && !error && pagination.total > 0">
+          <Pagination 
+            :pagination="pagination"
+            @page-changed="changePage"
+            @page-size-changed="changePageSize"
+          />
+        </div>
       </div>
     </div>
 

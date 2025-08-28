@@ -136,15 +136,15 @@
             </tbody>
           </table>
         </div>
-      </div>
       
       <!-- Pagination -->
-      <Pagination 
-        v-if="!loading && pagination.total > 0"
-        :pagination="pagination"
-        @page-changed="changePage"
-        @page-size-changed="changePageSize"
-      />
+      <div class="card-footer" v-if="!loading && pagination.total > 0">
+        <Pagination 
+          :pagination="pagination"
+          @page-changed="changePage"
+          @page-size-changed="changePageSize"
+        />
+      </div>
     </div>
 
     <!-- Test Suite Modal -->

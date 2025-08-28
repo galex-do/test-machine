@@ -1,5 +1,5 @@
 <template>
-  <div class="pagination-container d-flex justify-content-between align-items-center mt-4">
+  <div class="pagination-container d-flex justify-content-between align-items-center">
     <!-- Page Size Selector -->
     <div class="d-flex align-items-center">
       <label for="page-size-select" class="form-label me-2 mb-0">Show:</label>
@@ -141,8 +141,7 @@ export default {
 
 <style scoped>
 .pagination-container {
-  border-top: 1px solid #e5e5e5;
-  padding-top: 1rem;
+  /* No extra styling needed - card-footer provides spacing */
 }
 
 .btn-sm {
