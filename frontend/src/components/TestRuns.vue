@@ -26,39 +26,39 @@
       <i class="fas fa-exclamation-triangle"></i> {{ error }}
     </div>
 
-    <!-- Test Runs List -->
-    <div v-if="!loading && !error">
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <input
-            type="text"
-            class="form-control"
-            placeholder="Search test runs..."
-            v-model="searchQuery"
-          >
-        </div>
-        <div class="col-md-3">
-          <select class="form-select" v-model="statusFilter">
-            <option value="">All Statuses</option>
-            <option value="Not Started">Not Started</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Completed">Completed</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
+    <!-- Search Bar -->
+    <div v-if="!loading && !error" class="row mb-3">
+      <div class="col-md-6">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search test runs..."
+          v-model="searchQuery"
+        >
+      </div>
+    </div>
+
+    <!-- Test Runs Table -->
+    <div v-if="!loading && !error" class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <h5 class="mb-0"><i class="fas fa-play-circle"></i> Test Runs</h5>
+          <div class="d-flex gap-3 align-items-center flex-wrap">
+            <FilterBy 
+              :filterOptions="testRunFilterOptions"
+              :defaultFilters="currentFilters"
+              componentId="test-runs"
+              @filters-changed="handleFiltersChange"
+            />
+            <SortBy 
+              :sortOptions="testRunSortOptions"
+              :defaultSort="sortBy"
+              componentId="test-runs"
+              @sort-changed="handleSortChange"
+            />
+          </div>
         </div>
       </div>
-
-      <!-- Test Runs Table -->
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5><i class="fas fa-play-circle"></i> Test Runs</h5>
-          <SortBy 
-            :sortOptions="testRunSortOptions"
-            :defaultSort="sortBy"
-            componentId="test-runs"
-            @sort-changed="handleSortChange"
-          />
-        </div>
         <div class="card-body">
           <div v-if="filteredTestRuns.length === 0" class="text-center py-4 text-muted">
             <i class="fas fa-inbox fa-3x mb-3"></i>
@@ -212,7 +212,6 @@
           />
         </div>
       </div>
-    </div>
 
   </div>
 </template>
@@ -221,14 +220,17 @@
 import api from '../services/api.js'
 import { formatDate, showAlert } from '../utils/helpers.js'
 import { applySorting, SORT_OPTION_SETS } from '../utils/sortUtils.js'
+import { applyFilters, FILTER_OPTION_SETS, FILTER_CONFIGS } from '../utils/filterUtils.js'
 import Pagination from './Pagination.vue'
 import SortBy from './SortBy.vue'
+import FilterBy from './FilterBy.vue'
 
 export default {
   name: 'TestRuns',
   components: {
     Pagination,
-    SortBy
+    SortBy,
+    FilterBy
   },
   data() {
     return {
@@ -236,7 +238,7 @@ export default {
       loading: true,
       error: null,
       searchQuery: '',
-      statusFilter: '',
+      currentFilters: {},
       sortBy: 'created_desc',
       pagination: {
         page: 1,
@@ -254,7 +256,8 @@ export default {
         { value: 'name_desc', label: 'Name (Z-A)' },
         { value: 'status_desc', label: 'Status (High to Low)' },
         { value: 'status_asc', label: 'Status (Low to High)' }
-      ]
+      ],
+      testRunFilterOptions: FILTER_OPTION_SETS.TEST_RUNS
     }
   },
   computed: {
@@ -267,11 +270,6 @@ export default {
   watch: {
     searchQuery() {
       // Reset to first page when searching
-      this.pagination.page = 1
-      this.loadTestRuns()
-    },
-    statusFilter() {
-      // Reset to first page when filtering
       this.pagination.page = 1
       this.loadTestRuns()
     }
@@ -297,6 +295,7 @@ export default {
         // Apply filters first
         let filteredRuns = allTestRuns
         
+        // Apply search filter
         if (this.searchQuery) {
           const query = this.searchQuery.toLowerCase()
           filteredRuns = filteredRuns.filter(run => 
@@ -306,8 +305,9 @@ export default {
           )
         }
 
-        if (this.statusFilter) {
-          filteredRuns = filteredRuns.filter(run => run.status === this.statusFilter)
+        // Apply other filters using the utility function
+        if (Object.keys(this.currentFilters).length > 0) {
+          filteredRuns = applyFilters(filteredRuns, this.currentFilters, FILTER_CONFIGS.TEST_RUNS)
         }
         
         // Apply sorting
@@ -343,6 +343,12 @@ export default {
     handleSortChange(newSortBy) {
       this.sortBy = newSortBy
       this.pagination.page = 1 // Reset to first page when sorting changes
+      this.loadTestRuns()
+    },
+
+    handleFiltersChange(newFilters) {
+      this.currentFilters = newFilters
+      this.pagination.page = 1 // Reset to first page when filters change
       this.loadTestRuns()
     },
 
