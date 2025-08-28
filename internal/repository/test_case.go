@@ -2,8 +2,10 @@ package repository
 
 import (
         "database/sql"
+        "fmt"
 
         "github.com/galex-do/test-machine/internal/models"
+        "github.com/galex-do/test-machine/internal/utils"
 )
 
 // TestCaseRepository handles database operations for test cases
@@ -83,6 +85,104 @@ func (r *TestCaseRepository) GetAll(testSuiteID *int) ([]models.TestCase, error)
         }
 
         return testCases, nil
+}
+
+// GetAllPaginated returns test cases with pagination
+func (r *TestCaseRepository) GetAllPaginated(pagination models.PaginationRequest, testSuiteID *int) (*models.PaginatedResult, error) {
+        // Build count query
+        var countQuery string
+        var countArgs []interface{}
+        
+        if testSuiteID != nil {
+                countQuery = `SELECT COUNT(*) FROM test_cases WHERE test_suite_id = $1`
+                countArgs = []interface{}{*testSuiteID}
+        } else {
+                countQuery = `SELECT COUNT(*) FROM test_cases`
+        }
+        
+        // Get total count
+        var total int
+        err := r.db.QueryRow(countQuery, countArgs...).Scan(&total)
+        if err != nil {
+                return nil, fmt.Errorf("failed to count test cases: %w", err)
+        }
+
+        // Calculate pagination
+        offset, limit := utils.GetOffsetAndLimit(pagination.Page, pagination.PageSize)
+        paginationResp := utils.CalculatePagination(pagination.Page, pagination.PageSize, total)
+
+        // Build data query
+        var query string
+        var args []interface{}
+
+        if testSuiteID != nil {
+                query = `
+                        SELECT tc.id, tc.title, tc.description, tc.priority, tc.status, tc.test_suite_id, tc.created_at, tc.updated_at,
+                               ts.id, ts.name, ts.description, ts.project_id, ts.created_at, ts.updated_at,
+                               p.id, p.name, p.description, p.created_at, p.updated_at,
+                               COALESCE(step_counts.step_count, 0) as test_steps_count
+                        FROM test_cases tc
+                        JOIN test_suites ts ON tc.test_suite_id = ts.id
+                        JOIN projects p ON ts.project_id = p.id
+                        LEFT JOIN (
+                                SELECT test_case_id, COUNT(*) as step_count
+                                FROM test_steps
+                                GROUP BY test_case_id
+                        ) step_counts ON tc.id = step_counts.test_case_id
+                        WHERE tc.test_suite_id = $1
+                        ORDER BY tc.created_at DESC
+                        LIMIT $2 OFFSET $3
+                `
+                args = []interface{}{*testSuiteID, limit, offset}
+        } else {
+                query = `
+                        SELECT tc.id, tc.title, tc.description, tc.priority, tc.status, tc.test_suite_id, tc.created_at, tc.updated_at,
+                               ts.id, ts.name, ts.description, ts.project_id, ts.created_at, ts.updated_at,
+                               p.id, p.name, p.description, p.created_at, p.updated_at,
+                               COALESCE(step_counts.step_count, 0) as test_steps_count
+                        FROM test_cases tc
+                        JOIN test_suites ts ON tc.test_suite_id = ts.id
+                        JOIN projects p ON ts.project_id = p.id
+                        LEFT JOIN (
+                                SELECT test_case_id, COUNT(*) as step_count
+                                FROM test_steps
+                                GROUP BY test_case_id
+                        ) step_counts ON tc.id = step_counts.test_case_id
+                        ORDER BY tc.created_at DESC
+                        LIMIT $1 OFFSET $2
+                `
+                args = []interface{}{limit, offset}
+        }
+
+        rows, err := r.db.Query(query, args...)
+        if err != nil {
+                return nil, fmt.Errorf("failed to get test cases: %w", err)
+        }
+        defer rows.Close()
+
+        var testCases []models.TestCase
+        for rows.Next() {
+                var tc models.TestCase
+                var ts models.TestSuite
+                var p models.Project
+                err := rows.Scan(
+                        &tc.ID, &tc.Title, &tc.Description, &tc.Priority, &tc.Status, &tc.TestSuiteID, &tc.CreatedAt, &tc.UpdatedAt,
+                        &ts.ID, &ts.Name, &ts.Description, &ts.ProjectID, &ts.CreatedAt, &ts.UpdatedAt,
+                        &p.ID, &p.Name, &p.Description, &p.CreatedAt, &p.UpdatedAt,
+                        &tc.TestStepsCount,
+                )
+                if err != nil {
+                        return nil, fmt.Errorf("failed to scan test case: %w", err)
+                }
+                ts.Project = &p
+                tc.TestSuite = &ts
+                testCases = append(testCases, tc)
+        }
+
+        return &models.PaginatedResult{
+                Data:       testCases,
+                Pagination: paginationResp,
+        }, nil
 }
 
 // GetByID returns a test case by ID

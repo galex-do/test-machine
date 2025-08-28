@@ -104,6 +104,14 @@
           </tbody>
         </table>
       </div>
+      
+      <!-- Pagination -->
+      <Pagination 
+        v-if="!loading && pagination.total > 0"
+        :pagination="pagination"
+        @page-changed="changePage"
+        @page-size-changed="changePageSize"
+      />
     </div>
 
     <!-- Repository Modal -->
@@ -120,11 +128,13 @@
 import { api } from '../services/api.js'
 import { formatDate, showAlert } from '../utils/helpers.js'
 import RepositoryModal from './modals/RepositoryModal.vue'
+import Pagination from './Pagination.vue'
 
 export default {
   name: 'Repositories',
   components: {
-    RepositoryModal
+    RepositoryModal,
+    Pagination
   },
   data() {
     return {
@@ -132,7 +142,15 @@ export default {
       loading: true,
       showRepositoryModal: false,
       selectedRepository: null,
-      syncing: null
+      syncing: null,
+      pagination: {
+        page: 1,
+        page_size: 25,
+        total: 0,
+        total_pages: 1,
+        has_next: false,
+        has_prev: false
+      }
     }
   },
   mounted() {
@@ -144,17 +162,44 @@ export default {
     async loadRepositories() {
       this.loading = true
       try {
-        this.repositories = await api.getRepositories()
+        const allRepositories = await api.getRepositories()
+        
         // Ensure repositories is always an array
-        if (!Array.isArray(this.repositories)) {
+        if (!Array.isArray(allRepositories)) {
           this.repositories = []
+          return
         }
+        
+        // Simulate pagination for now
+        const startIndex = (this.pagination.page - 1) * this.pagination.page_size
+        const endIndex = startIndex + this.pagination.page_size
+        
+        // Update pagination info
+        this.pagination.total = allRepositories.length
+        this.pagination.total_pages = Math.ceil(allRepositories.length / this.pagination.page_size)
+        this.pagination.has_next = this.pagination.page < this.pagination.total_pages
+        this.pagination.has_prev = this.pagination.page > 1
+        
+        // Get current page data
+        this.repositories = allRepositories.slice(startIndex, endIndex)
+        
       } catch (error) {
         showAlert('Error loading repositories: ' + error.message, 'danger')
         this.repositories = []
       } finally {
         this.loading = false
       }
+    },
+
+    changePage(page) {
+      this.pagination.page = page
+      this.loadRepositories()
+    },
+
+    changePageSize(pageSize) {
+      this.pagination.page_size = pageSize
+      this.pagination.page = 1 // Reset to first page
+      this.loadRepositories()
     },
 
     showCreateModal() {

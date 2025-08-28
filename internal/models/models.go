@@ -306,6 +306,28 @@ type UpdateRepositoryRequest struct {
         // Note: RemoteURL is intentionally omitted - it's immutable after creation
 }
 
+// PaginationRequest represents pagination parameters
+type PaginationRequest struct {
+        Page     int `json:"page" form:"page"`
+        PageSize int `json:"page_size" form:"page_size"`
+}
+
+// PaginationResponse represents paginated response metadata
+type PaginationResponse struct {
+        Page       int `json:"page"`
+        PageSize   int `json:"page_size"`
+        Total      int `json:"total"`
+        TotalPages int `json:"total_pages"`
+        HasNext    bool `json:"has_next"`
+        HasPrev    bool `json:"has_prev"`
+}
+
+// PaginatedResult represents a paginated list result
+type PaginatedResult struct {
+        Data       interface{}         `json:"data"`
+        Pagination PaginationResponse  `json:"pagination"`
+}
+
 // SyncRequest represents a request to sync a repository
 type SyncRequest struct {
         RepositoryID int `json:"repository_id"`

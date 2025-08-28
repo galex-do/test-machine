@@ -2,8 +2,10 @@ package repository
 
 import (
         "database/sql"
+        "fmt"
 
         "github.com/galex-do/test-machine/internal/models"
+        "github.com/galex-do/test-machine/internal/utils"
 )
 
 // ProjectRepository handles database operations for projects
@@ -67,6 +69,78 @@ func (r *ProjectRepository) GetAll() ([]models.Project, error) {
         }
 
         return projects, nil
+}
+
+// GetAllPaginated returns projects with pagination
+func (r *ProjectRepository) GetAllPaginated(pagination models.PaginationRequest) (*models.PaginatedResult, error) {
+        // First, get total count
+        var total int
+        err := r.db.QueryRow(`
+                SELECT COUNT(DISTINCT p.id)
+                FROM projects p
+        `).Scan(&total)
+        if err != nil {
+                return nil, fmt.Errorf("failed to count projects: %w", err)
+        }
+
+        // Calculate pagination
+        offset, limit := utils.GetOffsetAndLimit(pagination.Page, pagination.PageSize)
+        paginationResp := utils.CalculatePagination(pagination.Page, pagination.PageSize, total)
+
+        // Get paginated data
+        rows, err := r.db.Query(`
+                SELECT p.id, p.name, p.description, p.repository_id, p.created_at, p.updated_at, 
+                       COALESCE(COUNT(ts.id), 0) as test_suites_count,
+                       r.id, r.name, r.remote_url, k.id, k.name, k.key_type
+                FROM projects p
+                LEFT JOIN test_suites ts ON p.id = ts.project_id
+                LEFT JOIN repositories r ON p.repository_id = r.id
+                LEFT JOIN keys k ON r.key_id = k.id
+                GROUP BY p.id, p.name, p.description, p.repository_id, p.created_at, p.updated_at,
+                         r.id, r.name, r.remote_url, k.id, k.name, k.key_type
+                ORDER BY p.created_at DESC
+                LIMIT $1 OFFSET $2
+        `, limit, offset)
+        if err != nil {
+                return nil, fmt.Errorf("failed to get projects: %w", err)
+        }
+        defer rows.Close()
+
+        var projects []models.Project
+        for rows.Next() {
+                var p models.Project
+                var repoID, keyID sql.NullInt64
+                var repoName, repoURL, keyName, keyType sql.NullString
+                err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.RepositoryID, &p.CreatedAt, &p.UpdatedAt, &p.TestSuitesCount, &repoID, &repoName, &repoURL, &keyID, &keyName, &keyType)
+                if err != nil {
+                        return nil, fmt.Errorf("failed to scan project: %w", err)
+                }
+                
+                // Set repository information if available
+                if repoID.Valid {
+                        p.Repository = &models.Repository{
+                                ID:        int(repoID.Int64),
+                                Name:      repoName.String,
+                                RemoteURL: repoURL.String,
+                        }
+                        
+                        // Set key information if available
+                        if keyID.Valid {
+                                p.Repository.Key = &models.Key{
+                                        ID:      int(keyID.Int64),
+                                        Name:    keyName.String,
+                                        KeyType: keyType.String,
+                                }
+                        }
+                }
+                
+                projects = append(projects, p)
+        }
+
+        return &models.PaginatedResult{
+                Data:       projects,
+                Pagination: paginationResp,
+        }, nil
 }
 
 // GetByID returns a project by ID with test suite count

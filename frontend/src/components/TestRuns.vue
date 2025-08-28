@@ -193,6 +193,14 @@
             </table>
           </div>
         </div>
+        
+        <!-- Pagination -->
+        <Pagination 
+          v-if="!loading && !error && pagination.total > 0"
+          :pagination="pagination"
+          @page-changed="changePage"
+          @page-size-changed="changePageSize"
+        />
       </div>
     </div>
 
@@ -202,40 +210,48 @@
 <script>
 import api from '../services/api.js'
 import { formatDate, showAlert } from '../utils/helpers.js'
+import Pagination from './Pagination.vue'
 
 export default {
   name: 'TestRuns',
+  components: {
+    Pagination
+  },
   data() {
     return {
       testRuns: [],
       loading: true,
       error: null,
       searchQuery: '',
-      statusFilter: ''
+      statusFilter: '',
+      pagination: {
+        page: 1,
+        page_size: 25,
+        total: 0,
+        total_pages: 1,
+        has_next: false,
+        has_prev: false
+      },
+      allTestRuns: [] // Store all test runs for client-side filtering
     }
   },
   computed: {
     filteredTestRuns() {
-      if (!this.testRuns || !Array.isArray(this.testRuns)) {
-        return []
-      }
-
-      let filtered = [...this.testRuns]
-
-      if (this.searchQuery) {
-        const query = this.searchQuery.toLowerCase()
-        filtered = filtered.filter(run => 
-          (run.name || '').toLowerCase().includes(query) ||
-          (run.description || '').toLowerCase().includes(query) ||
-          (run.project?.name || '').toLowerCase().includes(query)
-        )
-      }
-
-      if (this.statusFilter) {
-        filtered = filtered.filter(run => run.status === this.statusFilter)
-      }
-
-      return filtered
+      // For paginated results, we return the current page data  
+      // Filtering is now handled server-side via the pagination API
+      return this.testRuns || []
+    }
+  },
+  watch: {
+    searchQuery() {
+      // Reset to first page when searching
+      this.pagination.page = 1
+      this.loadTestRuns()
+    },
+    statusFilter() {
+      // Reset to first page when filtering
+      this.pagination.page = 1
+      this.loadTestRuns()
     }
   },
   mounted() {
@@ -248,12 +264,55 @@ export default {
       this.loading = true
       this.error = null
       try {
-        this.testRuns = await api.getTestRuns()
+        // For now, load all test runs and handle pagination client-side
+        // TODO: Update API to support server-side pagination
+        const allTestRuns = await api.getTestRuns()
+        
+        // Simulate pagination for now
+        const startIndex = (this.pagination.page - 1) * this.pagination.page_size
+        const endIndex = startIndex + this.pagination.page_size
+        
+        // Apply filters first
+        let filteredRuns = allTestRuns
+        
+        if (this.searchQuery) {
+          const query = this.searchQuery.toLowerCase()
+          filteredRuns = filteredRuns.filter(run => 
+            (run.name || '').toLowerCase().includes(query) ||
+            (run.description || '').toLowerCase().includes(query) ||
+            (run.project?.name || '').toLowerCase().includes(query)
+          )
+        }
+
+        if (this.statusFilter) {
+          filteredRuns = filteredRuns.filter(run => run.status === this.statusFilter)
+        }
+        
+        // Update pagination info
+        this.pagination.total = filteredRuns.length
+        this.pagination.total_pages = Math.ceil(filteredRuns.length / this.pagination.page_size)
+        this.pagination.has_next = this.pagination.page < this.pagination.total_pages
+        this.pagination.has_prev = this.pagination.page > 1
+        
+        // Get current page data
+        this.testRuns = filteredRuns.slice(startIndex, endIndex)
+        
       } catch (error) {
         this.error = 'Error loading test runs: ' + error.message
       } finally {
         this.loading = false
       }
+    },
+
+    changePage(page) {
+      this.pagination.page = page
+      this.loadTestRuns()
+    },
+
+    changePageSize(pageSize) {
+      this.pagination.page_size = pageSize
+      this.pagination.page = 1 // Reset to first page
+      this.loadTestRuns()
     },
 
 

@@ -5,6 +5,7 @@ import (
         "fmt"
 
         "github.com/galex-do/test-machine/internal/models"
+        "github.com/galex-do/test-machine/internal/utils"
 )
 
 type RepositoryRepository struct {
@@ -100,6 +101,70 @@ func (r *RepositoryRepository) GetAll() ([]models.Repository, error) {
         }
 
         return repositories, nil
+}
+
+// GetAllPaginated returns repositories with pagination
+func (r *RepositoryRepository) GetAllPaginated(pagination models.PaginationRequest) (*models.PaginatedResult, error) {
+        // First, get total count
+        var total int
+        err := r.db.QueryRow(`
+                SELECT COUNT(*)
+                FROM repositories
+        `).Scan(&total)
+        if err != nil {
+                return nil, fmt.Errorf("failed to count repositories: %w", err)
+        }
+
+        // Calculate pagination
+        offset, limit := utils.GetOffsetAndLimit(pagination.Page, pagination.PageSize)
+        paginationResp := utils.CalculatePagination(pagination.Page, pagination.PageSize, total)
+
+        // Get paginated data
+        rows, err := r.db.Query(`
+                SELECT r.id, r.name, r.description, r.remote_url, r.key_id, r.default_branch, r.synced_at, r.created_at, r.updated_at,
+                       k.id, k.name, k.key_type
+                FROM repositories r
+                LEFT JOIN keys k ON r.key_id = k.id
+                ORDER BY r.created_at DESC
+                LIMIT $1 OFFSET $2
+        `, limit, offset)
+        if err != nil {
+                return nil, fmt.Errorf("failed to query repositories: %w", err)
+        }
+        defer rows.Close()
+
+        var repositories []models.Repository
+        for rows.Next() {
+                var repo models.Repository
+                var keyID, keyName, keyType sql.NullString
+                err := rows.Scan(
+                        &repo.ID, &repo.Name, &repo.Description, &repo.RemoteURL, &repo.KeyID,
+                        &repo.DefaultBranch, &repo.SyncedAt, &repo.CreatedAt, &repo.UpdatedAt,
+                        &keyID, &keyName, &keyType,
+                )
+                if err != nil {
+                        return nil, fmt.Errorf("failed to scan repository: %w", err)
+                }
+
+                // Set key information if available
+                if keyID.Valid {
+                        var kid int
+                        if err := keyID.Scan(&kid); err == nil {
+                                repo.Key = &models.Key{
+                                        ID:      kid,
+                                        Name:    keyName.String,
+                                        KeyType: keyType.String,
+                                }
+                        }
+                }
+
+                repositories = append(repositories, repo)
+        }
+
+        return &models.PaginatedResult{
+                Data:       repositories,
+                Pagination: paginationResp,
+        }, nil
 }
 
 // GetByID returns a repository by ID with key information
