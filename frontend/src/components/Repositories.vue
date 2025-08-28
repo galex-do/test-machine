@@ -24,8 +24,18 @@
       </div>
     </div>
 
-    <div v-if="!loading && repositories && repositories.length > 0">
-      <div class="table-responsive">
+    <div v-if="!loading && repositories && repositories.length > 0" class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5><i class="fas fa-code-branch"></i> Repositories</h5>
+        <SortBy 
+          :sortOptions="repositorySortOptions"
+          :defaultSort="sortBy"
+          componentId="repositories"
+          @sort-changed="handleSortChange"
+        />
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
         <table class="table table-hover">
           <thead class="table-light">
             <tr>
@@ -103,15 +113,17 @@
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
       
       <!-- Pagination -->
-      <Pagination 
-        v-if="!loading && pagination.total > 0"
-        :pagination="pagination"
-        @page-changed="changePage"
-        @page-size-changed="changePageSize"
-      />
+      <div class="card-footer" v-if="!loading && pagination.total > 0">
+        <Pagination 
+          :pagination="pagination"
+          @page-changed="changePage"
+          @page-size-changed="changePageSize"
+        />
+      </div>
     </div>
 
     <!-- Repository Modal -->
@@ -127,14 +139,17 @@
 <script>
 import { api } from '../services/api.js'
 import { formatDate, showAlert } from '../utils/helpers.js'
+import { applySorting, SORT_OPTION_SETS } from '../utils/sortUtils.js'
 import RepositoryModal from './modals/RepositoryModal.vue'
 import Pagination from './Pagination.vue'
+import SortBy from './SortBy.vue'
 
 export default {
   name: 'Repositories',
   components: {
     RepositoryModal,
-    Pagination
+    Pagination,
+    SortBy
   },
   data() {
     return {
@@ -143,6 +158,9 @@ export default {
       showRepositoryModal: false,
       selectedRepository: null,
       syncing: null,
+      sortBy: 'created_desc',
+      allRepositories: [], // Store all repositories for sorting and pagination
+      repositorySortOptions: SORT_OPTION_SETS.REPOSITORIES,
       pagination: {
         page: 1,
         page_size: 25,
@@ -165,23 +183,8 @@ export default {
         const allRepositories = await api.getRepositories()
         
         // Ensure repositories is always an array
-        if (!Array.isArray(allRepositories)) {
-          this.repositories = []
-          return
-        }
-        
-        // Simulate pagination for now
-        const startIndex = (this.pagination.page - 1) * this.pagination.page_size
-        const endIndex = startIndex + this.pagination.page_size
-        
-        // Update pagination info
-        this.pagination.total = allRepositories.length
-        this.pagination.total_pages = Math.ceil(allRepositories.length / this.pagination.page_size)
-        this.pagination.has_next = this.pagination.page < this.pagination.total_pages
-        this.pagination.has_prev = this.pagination.page > 1
-        
-        // Get current page data
-        this.repositories = allRepositories.slice(startIndex, endIndex)
+        this.allRepositories = Array.isArray(allRepositories) ? allRepositories : []
+        this.applyCurrentSorting()
         
       } catch (error) {
         showAlert('Error loading repositories: ' + error.message, 'danger')
@@ -191,15 +194,44 @@ export default {
       }
     },
 
+    handleSortChange(newSortBy) {
+      this.sortBy = newSortBy
+      this.pagination.page = 1 // Reset to first page when sorting changes
+      this.applyCurrentSorting()
+    },
+
+    applyCurrentSorting() {
+      if (!this.allRepositories || !Array.isArray(this.allRepositories)) {
+        this.repositories = []
+        return
+      }
+
+      // Use the utility function to sort the data
+      const sortedRepositories = applySorting(this.allRepositories, this.sortBy)
+
+      // Apply pagination
+      const startIndex = (this.pagination.page - 1) * this.pagination.page_size
+      const endIndex = startIndex + this.pagination.page_size
+      
+      // Update pagination info
+      this.pagination.total = sortedRepositories.length
+      this.pagination.total_pages = Math.ceil(sortedRepositories.length / this.pagination.page_size)
+      this.pagination.has_next = this.pagination.page < this.pagination.total_pages
+      this.pagination.has_prev = this.pagination.page > 1
+      
+      // Get current page data
+      this.repositories = sortedRepositories.slice(startIndex, endIndex)
+    },
+
     changePage(page) {
       this.pagination.page = page
-      this.loadRepositories()
+      this.applyCurrentSorting()
     },
 
     changePageSize(pageSize) {
       this.pagination.page_size = pageSize
       this.pagination.page = 1 // Reset to first page
-      this.loadRepositories()
+      this.applyCurrentSorting()
     },
 
     showCreateModal() {

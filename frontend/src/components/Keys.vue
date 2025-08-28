@@ -25,8 +25,14 @@
 
     <!-- Keys List -->
     <div class="card">
-      <div class="card-header">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <h5><i class="fas fa-key"></i> Authentication Keys</h5>
+        <SortBy 
+          :sortOptions="keySortOptions"
+          :defaultSort="sortBy"
+          componentId="keys"
+          @sort-changed="handleSortChange"
+        />
       </div>
       <div class="card-body">
         <div v-if="loading" v-html="showLoading()"></div>
@@ -81,10 +87,11 @@
             </tbody>
           </table>
         </div>
+      </div>
         
-        <!-- Pagination -->
+      <!-- Pagination -->
+      <div class="card-footer" v-if="!loading && pagination.total > 0">
         <Pagination 
-          v-if="!loading && pagination.total > 0"
           :pagination="pagination"
           @page-changed="changePage"
           @page-size-changed="changePageSize"
@@ -149,14 +156,17 @@
 <script>
 import { api } from '../services/api.js'
 import { formatDate, showAlert, showLoading } from '../utils/helpers.js'
+import { applySorting, SORT_OPTION_SETS } from '../utils/sortUtils.js'
 import KeyModal from './modals/KeyModal.vue'
 import Pagination from './Pagination.vue'
+import SortBy from './SortBy.vue'
 
 export default {
   name: 'Keys',
   components: {
     KeyModal,
-    Pagination
+    Pagination,
+    SortBy
   },
   data() {
     return {
@@ -168,6 +178,9 @@ export default {
       keyData: '',
       loadingKeyData: false,
       keyDataError: '',
+      sortBy: 'created_desc',
+      allKeys: [], // Store all keys for sorting and pagination
+      keySortOptions: SORT_OPTION_SETS.KEYS,
       pagination: {
         page: 1,
         page_size: 25,
@@ -189,20 +202,8 @@ export default {
       this.loading = true
       try {
         const allKeys = await api.getKeys()
-        const keysArray = Array.isArray(allKeys) ? allKeys : []
-        
-        // Simulate pagination for now
-        const startIndex = (this.pagination.page - 1) * this.pagination.page_size
-        const endIndex = startIndex + this.pagination.page_size
-        
-        // Update pagination info
-        this.pagination.total = keysArray.length
-        this.pagination.total_pages = Math.ceil(keysArray.length / this.pagination.page_size)
-        this.pagination.has_next = this.pagination.page < this.pagination.total_pages
-        this.pagination.has_prev = this.pagination.page > 1
-        
-        // Get current page data
-        this.keys = keysArray.slice(startIndex, endIndex)
+        this.allKeys = Array.isArray(allKeys) ? allKeys : []
+        this.applyCurrentSorting()
         
       } catch (error) {
         showAlert('Error loading keys: ' + error.message, 'danger')
@@ -212,15 +213,44 @@ export default {
       }
     },
 
+    handleSortChange(newSortBy) {
+      this.sortBy = newSortBy
+      this.pagination.page = 1 // Reset to first page when sorting changes
+      this.applyCurrentSorting()
+    },
+
+    applyCurrentSorting() {
+      if (!this.allKeys || !Array.isArray(this.allKeys)) {
+        this.keys = []
+        return
+      }
+
+      // Use the utility function to sort the data
+      const sortedKeys = applySorting(this.allKeys, this.sortBy)
+
+      // Apply pagination
+      const startIndex = (this.pagination.page - 1) * this.pagination.page_size
+      const endIndex = startIndex + this.pagination.page_size
+      
+      // Update pagination info
+      this.pagination.total = sortedKeys.length
+      this.pagination.total_pages = Math.ceil(sortedKeys.length / this.pagination.page_size)
+      this.pagination.has_next = this.pagination.page < this.pagination.total_pages
+      this.pagination.has_prev = this.pagination.page > 1
+      
+      // Get current page data
+      this.keys = sortedKeys.slice(startIndex, endIndex)
+    },
+
     changePage(page) {
       this.pagination.page = page
-      this.loadKeys()
+      this.applyCurrentSorting()
     },
 
     changePageSize(pageSize) {
       this.pagination.page_size = pageSize
       this.pagination.page = 1 // Reset to first page
-      this.loadKeys()
+      this.applyCurrentSorting()
     },
 
     showCreateKeyModal() {
