@@ -33,6 +33,9 @@
           </span>
           <small class="text-muted d-block mt-1">
             Created: {{ formatDate(testRun.created_at) }}
+            <span v-if="elapsedTime" class="ms-3">
+              <i class="fas fa-clock"></i> Elapsed: {{ elapsedTime }}
+            </span>
           </small>
         </div>
       </div>
@@ -119,7 +122,7 @@
               >
                 <div>
                   <div class="fw-bold">{{ index + 1 }}</div>
-                  <small class="text-muted">{{ truncateText(testCase.TestCase?.Title || testCase.title, 25) }}</small>
+                  <small class="text-muted">{{ truncateText(testCase.test_case?.title || testCase.title, 25) }}</small>
                 </div>
                 <span class="badge" :class="{
                   'bg-success': testCase.Status === 'Pass',
@@ -171,8 +174,8 @@
           <div class="card-body">
             <!-- Test Case Details -->
             <div class="mb-4">
-              <h5>{{ currentTestCase.TestCase?.Title || currentTestCase.title }}</h5>
-              <p class="text-muted">{{ currentTestCase.TestCase?.Description || currentTestCase.description }}</p>
+              <h5>{{ currentTestCase?.test_case?.title || currentTestCase?.title || 'Test Case Title' }}</h5>
+              <p class="text-muted mb-3">{{ currentTestCase?.test_case?.description || currentTestCase?.description || 'No description available' }}</p>
               
               <!-- Test Steps -->
               <div v-if="currentTestSteps && currentTestSteps.length > 0" class="mt-3">
@@ -192,56 +195,34 @@
                   </div>
                 </div>
               </div>
+              <div v-else class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No test steps available for this test case.
+              </div>
             </div>
             
             <!-- Result Selection -->
-            <div class="row">
-              <div class="col-md-8">
-                <!-- Elapsed Time Display -->
-                <div v-if="elapsedTime" class="mb-3">
-                  <small class="text-muted">
-                    <i class="fas fa-clock"></i> Elapsed Time: {{ elapsedTime }}
-                  </small>
-                </div>
+            <div class="mb-4">
+              <label class="form-label fw-bold">Test Result *</label>
+              <div class="btn-group d-flex" role="group">
+                <input type="radio" class="btn-check" :id="`pass-${currentTestCase?.id || 'default'}`" :value="'Pass'" v-model="currentResult.status">
+                <label class="btn btn-outline-success" :for="`pass-${currentTestCase?.id || 'default'}`">
+                  <i class="fas fa-check"></i> Pass
+                </label>
                 
-                <!-- Result Selection -->
-                <div class="mb-3">
-                  <label class="form-label fw-bold">Test Result *</label>
-                  <div class="btn-group d-flex" role="group">
-                    <input type="radio" class="btn-check" :id="`pass-${currentTestCase.id}`" :value="'Pass'" v-model="currentResult.status">
-                    <label class="btn btn-outline-success" :for="`pass-${currentTestCase.id}`">
-                      <i class="fas fa-check"></i> Pass
-                    </label>
-                    
-                    <input type="radio" class="btn-check" :id="`fail-${currentTestCase.id}`" :value="'Fail'" v-model="currentResult.status">
-                    <label class="btn btn-outline-danger" :for="`fail-${currentTestCase.id}`">
-                      <i class="fas fa-times"></i> Fail
-                    </label>
-                    
-                    <input type="radio" class="btn-check" :id="`skip-${currentTestCase.id}`" :value="'Skip'" v-model="currentResult.status">
-                    <label class="btn btn-outline-warning" :for="`skip-${currentTestCase.id}`">
-                      <i class="fas fa-forward"></i> Skip
-                    </label>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <!-- Save Button -->
-                <div class="d-grid">
-                  <button 
-                    @click="saveTestResult" 
-                    class="btn btn-primary btn-lg"
-                    :disabled="!currentResult.status || saving"
-                  >
-                    <i class="fas fa-save"></i> 
-                    {{ saving ? 'Saving...' : 'Save Result' }}
-                  </button>
-                </div>
+                <input type="radio" class="btn-check" :id="`fail-${currentTestCase?.id || 'default'}`" :value="'Fail'" v-model="currentResult.status">
+                <label class="btn btn-outline-danger" :for="`fail-${currentTestCase?.id || 'default'}`">
+                  <i class="fas fa-times"></i> Fail
+                </label>
+                
+                <input type="radio" class="btn-check" :id="`skip-${currentTestCase?.id || 'default'}`" :value="'Skip'" v-model="currentResult.status">
+                <label class="btn btn-outline-warning" :for="`skip-${currentTestCase?.id || 'default'}`">
+                  <i class="fas fa-forward"></i> Skip
+                </label>
               </div>
             </div>
             
             <!-- Comments -->
-            <div class="mb-3">
+            <div class="mb-4">
               <label class="form-label">Comments</label>
               <textarea 
                 class="form-control" 
@@ -249,6 +230,18 @@
                 placeholder="Add comments about test execution..."
                 v-model="currentResult.notes"
               ></textarea>
+            </div>
+            
+            <!-- Save Button at Bottom -->
+            <div class="d-grid">
+              <button 
+                @click="saveTestResult" 
+                class="btn btn-primary btn-lg"
+                :disabled="!currentResult.status || saving"
+              >
+                <i class="fas fa-save"></i> 
+                {{ saving ? 'Saving...' : 'Save Result' }}
+              </button>
             </div>
           </div>
         </div>
@@ -354,11 +347,17 @@ export default {
     },
     
     async loadCurrentTestSteps() {
-      if (!this.currentTestCase?.TestCase?.ID) return
+      if (!this.currentTestCase?.test_case?.id && !this.currentTestCase?.test_case_id) {
+        console.log('No test case ID available for loading steps')
+        return
+      }
       
       try {
-        const steps = await api.getTestCaseSteps(this.currentTestCase.TestCase.ID)
-        this.currentTestSteps = steps
+        const testCaseId = this.currentTestCase.test_case?.id || this.currentTestCase.test_case_id
+        console.log('Loading test steps for test case ID:', testCaseId)
+        const steps = await api.getTestCaseSteps(testCaseId)
+        console.log('Loaded test steps:', steps)
+        this.currentTestSteps = steps || []
       } catch (error) {
         console.error('Error loading test steps:', error)
         this.currentTestSteps = []
@@ -473,7 +472,8 @@ export default {
           completed_at: new Date().toISOString()
         }
         
-        await api.updateTestRunCase(this.testRun.id, this.currentTestCase.TestCase.ID, request)
+        const testCaseId = this.currentTestCase.test_case?.id || this.currentTestCase.test_case_id
+        await api.updateTestRunCase(this.testRun.id, testCaseId, request)
         
         // Update local data
         this.currentTestCase.Status = this.currentResult.status
