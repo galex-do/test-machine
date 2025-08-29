@@ -78,7 +78,6 @@
             <i class="fas fa-edit"></i> Edit
           </router-link>
           <button 
-            v-if="testRun.status === 'Not Started'"
             @click="deleteTestRun"
             class="btn btn-outline-danger"
             :disabled="loading"
@@ -90,300 +89,201 @@
       </div>
     </div>
 
-    <!-- Test Run Statistics -->
-    <div class="row mb-4" v-if="testRun">
-      <div class="col-md-2">
-        <div class="card">
-          <div class="card-body text-center">
-            <h5>Status</h5>
-            <span class="status-badge" :class="getStatusBadgeClass(testRun.status)">
-              {{ testRun.status }}
-            </span>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-2">
-        <div class="card">
-          <div class="card-body text-center">
-            <h5>Test Cases</h5>
-            <h3 class="text-primary">{{ testCases?.length || 0 }}</h3>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-2">
-        <div class="card">
-          <div class="card-body text-center">
-            <h5>Progress</h5>
-            <div class="progress mb-2" style="height: 6px;">
-              <div 
-                class="progress-bar" 
-                :class="getProgressBarClass()"
-                :style="{ width: getProgressPercentage() + '%' }"
-              ></div>
-            </div>
-            <small>{{ getProgressText() }}</small>
-          </div>
-        </div>
-      </div>
+    <!-- Main Content Layout -->
+    <div class="row" v-if="testRun">
+      <!-- Left Sidebar: Test Cases List -->
       <div class="col-md-3">
         <div class="card">
-          <div class="card-body text-center">
-            <h5>Duration</h5>
-            <p class="mb-0">{{ calculateDuration(testRun.started_at, testRun.completed_at) }}</p>
-            <small v-if="testRun.status === 'In Progress'" class="text-muted">
-              {{ getElapsedTime() }}
-            </small>
+          <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-list-check"></i> Test Cases</h6>
           </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card">
-          <div class="card-body text-center">
-            <h5>Executed By</h5>
-            <p class="mb-0">{{ testRun.executed_by || 'Not started' }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Test Running Interface -->
-    <div v-if="testRun && testRun.status === 'In Progress'" class="card mb-4">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="fas fa-play-circle text-success"></i> Test Running</h5>
-        <div class="d-flex gap-2">
-          <button 
-            @click="previousTestCase" 
-            class="btn btn-outline-secondary btn-sm"
-            :disabled="currentTestCaseIndex === 0"
-          >
-            <i class="fas fa-chevron-left"></i> Previous
-          </button>
-          <span class="badge bg-primary align-self-center">
-            {{ currentTestCaseIndex + 1 }} of {{ testCases?.length || 0 }}
-          </span>
-          <button 
-            @click="nextTestCase" 
-            class="btn btn-outline-secondary btn-sm"
-            :disabled="currentTestCaseIndex >= (testCases?.length || 0) - 1"
-          >
-            Next <i class="fas fa-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-      <div class="card-body" v-if="currentTestCase">
-        <div class="row">
-          <div class="col-md-8">
-            <h5>{{ currentTestCase.TestCase?.Title || currentTestCase.title }}</h5>
-            <p class="text-muted">{{ currentTestCase.TestCase?.Description || currentTestCase.description }}</p>
-            
-            <!-- Test Steps -->
-            <div v-if="currentTestCase.test_steps && currentTestCase.test_steps.length > 0" class="mb-3">
-              <h6><i class="fas fa-list-ol"></i> Test Steps:</h6>
-              <div v-for="step in currentTestCase.test_steps" :key="step.id" class="test-step-item mb-2">
-                <div class="d-flex">
-                  <span class="step-number me-2">{{ step.step_number }}</span>
-                  <div class="flex-grow-1">
-                    <p class="mb-1"><strong>Step:</strong> {{ step.description }}</p>
-                    <p class="mb-0 text-muted"><strong>Expected:</strong> {{ step.expected_result }}</p>
-                  </div>
-                </div>
-              </div>
+          <div class="card-body p-0">
+            <div v-if="loading" class="text-center py-3">
+              <div class="spinner-border spinner-border-sm text-primary"></div>
             </div>
-          </div>
-          <div class="col-md-4">
-            <div class="border rounded p-3 bg-light">
-              <h6><i class="fas fa-clipboard-check"></i> Test Result</h6>
-              
-              <!-- Status Selection -->
-              <div class="mb-3">
-                <label class="form-label">Status</label>
-                <div class="btn-group d-flex" role="group">
-                  <input type="radio" class="btn-check" :id="`pass-${currentTestCase.id}`" :value="'Pass'" v-model="currentResult.status">
-                  <label class="btn btn-outline-success btn-sm" :for="`pass-${currentTestCase.id}`">
-                    <i class="fas fa-check"></i> Pass
-                  </label>
-                  
-                  <input type="radio" class="btn-check" :id="`fail-${currentTestCase.id}`" :value="'Fail'" v-model="currentResult.status">
-                  <label class="btn btn-outline-danger btn-sm" :for="`fail-${currentTestCase.id}`">
-                    <i class="fas fa-times"></i> Fail
-                  </label>
-                  
-                  <input type="radio" class="btn-check" :id="`skip-${currentTestCase.id}`" :value="'Skip'" v-model="currentResult.status">
-                  <label class="btn btn-outline-warning btn-sm" :for="`skip-${currentTestCase.id}`">
-                    <i class="fas fa-forward"></i> Skip
-                  </label>
-                </div>
-              </div>
-              
-              <!-- Comments -->
-              <div class="mb-3">
-                <label class="form-label">Comments</label>
-                <textarea 
-                  class="form-control" 
-                  rows="4" 
-                  placeholder="Add comments about test execution..."
-                  v-model="currentResult.notes"
-                ></textarea>
-              </div>
-              
-              <!-- Save Button -->
-              <button 
-                @click="saveTestResult" 
-                class="btn btn-primary w-100"
-                :disabled="!currentResult.status || saving"
+            <div v-else-if="!testCases || testCases.length === 0" class="text-center py-3 text-muted">
+              <small>No test cases</small>
+            </div>
+            <div v-else class="list-group list-group-flush">
+              <button
+                v-for="(testCase, index) in testCases" 
+                :key="testCase.id"
+                @click="selectTestCase(index)"
+                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                :class="{ 
+                  'active': testRun.status === 'In Progress' && index === currentTestCaseIndex,
+                  'list-group-item-success': testCase.Status === 'Pass',
+                  'list-group-item-danger': testCase.Status === 'Fail',
+                  'list-group-item-warning': testCase.Status === 'Skip'
+                }"
               >
-                <i class="fas fa-save"></i> 
-                {{ saving ? 'Saving...' : 'Save Result' }}
+                <div>
+                  <div class="fw-bold">{{ index + 1 }}</div>
+                  <small class="text-muted">{{ truncateText(testCase.TestCase?.Title || testCase.title, 25) }}</small>
+                </div>
+                <span class="badge" :class="{
+                  'bg-success': testCase.Status === 'Pass',
+                  'bg-danger': testCase.Status === 'Fail', 
+                  'bg-warning text-dark': testCase.Status === 'Skip',
+                  'bg-secondary': testCase.Status === 'Not Executed' || !testCase.Status
+                }">
+                  {{ testCase.Status || 'Not Executed' }}
+                </span>
               </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    
-    <!-- Test Cases List -->
-    <div class="card" v-if="testRun">
-      <div class="card-header">
-        <h5><i class="fas fa-list-check"></i> Test Cases ({{ testCases?.length || 0 }})</h5>
-      </div>
-      <div class="card-body">
-        <div v-if="loading" class="text-center py-4">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-          <p class="mt-2">Loading test cases...</p>
-        </div>
-        
-        <div v-else-if="!testCases || testCases.length === 0" class="text-center py-4 text-muted">
-          <i class="fas fa-inbox fa-3x mb-3"></i>
-          <h5>No Test Cases</h5>
-          <p>No test cases are associated with this test run.</p>
-        </div>
-        
-        <div v-else class="table-responsive">
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th width="5%">#</th>
-                <th>Test Case</th>
-                <th width="15%">Priority</th>
-                <th width="15%">Status</th>
-                <th width="20%">Last Updated</th>
-                <th width="10%">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr 
-                v-for="(testCase, index) in testCases" 
-                :key="testCase.id"
-                :class="{ 'table-active': testRun.status === 'In Progress' && index === currentTestCaseIndex }"
-              >
-                <td>{{ index + 1 }}</td>
-                <td>
-                  <div>
-                    <strong>{{ testCase.TestCase?.Title || testCase.title }}</strong>
-                    <div v-if="testCase.TestCase?.Description || testCase.description" class="text-muted small">{{ truncateText(testCase.TestCase?.Description || testCase.description, 80) }}</div>
-                  </div>
-                </td>
-                <td>
-                  <span class="priority-badge" :class="getPriorityBadgeClass(testCase.TestCase?.Priority || testCase.priority)">
-                    {{ testCase.TestCase?.Priority || testCase.priority }}
-                  </span>
-                </td>
-                <td>
-                  <span class="status-badge" :class="getTestCaseStatusBadgeClass(testCase.Status || 'Not Executed')">
-                    {{ testCase.Status || 'Not Executed' }}
-                  </span>
-                </td>
-                <td class="small text-muted">
-                  {{ testCase.result_updated_at ? formatDate(testCase.result_updated_at) : '-' }}
-                </td>
-                <td>
-                  <div class="btn-group btn-group-sm" role="group">
-                    <button 
-                      v-if="testRun.status === 'In Progress'"
-                      @click="goToTestCase(index)"
-                      class="btn btn-outline-primary"
-                      :class="{ 'btn-primary': index === currentTestCaseIndex }"
-                      title="Execute Test"
-                    >
-                      <i class="fas fa-play"></i>
-                    </button>
-                    <router-link 
-                      :to="`/project/${testCase.test_suite?.project_id}/test-suite/${testCase.test_suite_id}/test-case/${testCase.id}`"
-                      class="btn btn-outline-info"
-                      title="View Details"
-                    >
-                      <i class="fas fa-eye"></i>
-                    </router-link>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
 
-    <!-- Test Run Information -->
-    <div class="card mt-4" v-if="testRun">
-      <div class="card-header">
-        <h5><i class="fas fa-info-circle"></i> Test Run Information</h5>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <div class="col-md-6">
-            <p><strong>Project:</strong> 
-              <router-link 
-                v-if="testRun.project" 
-                :to="`/project/${testRun.project.id}`"
-                class="text-decoration-none"
-              >
-                {{ testRun.project.name }}
-              </router-link>
-              <span v-else>N/A</span>
-            </p>
-            <p><strong>Git Reference:</strong> 
-              <span v-if="testRun.branch_name" class="badge bg-primary">
-                <i class="fas fa-code-branch"></i> {{ testRun.branch_name }}
-              </span>
-              <span v-else-if="testRun.tag_name" class="badge bg-warning">
-                <i class="fas fa-tag"></i> {{ testRun.tag_name }}
-              </span>
-              <span v-else class="text-muted">No git reference</span>
-            </p>
-            <p><strong>Started At:</strong> {{ formatDate(testRun.started_at) }}</p>
-            <p><strong>Completed At:</strong> {{ formatDate(testRun.completed_at) }}</p>
+      <!-- Right Main Panel: Test Running -->
+      <div class="col-md-9">
+        <div class="card" v-if="testRun?.status === 'In Progress' && currentTestCase">
+          <div class="card-header bg-primary text-white">
+            <div class="row align-items-center">
+              <div class="col">
+                <h5 class="mb-0">
+                  <i class="fas fa-play-circle"></i>
+                  Test Running - Case {{ currentTestCaseIndex + 1 }} of {{ testCases?.length || 0 }}
+                </h5>
+              </div>
+              <div class="col-auto">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button 
+                    @click="previousTestCase" 
+                    :disabled="currentTestCaseIndex <= 0"
+                    class="btn btn-outline-light"
+                    title="Previous Test Case"
+                  >
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  <button 
+                    @click="nextTestCase" 
+                    :disabled="currentTestCaseIndex >= (testCases?.length || 0) - 1"
+                    class="btn btn-outline-light"
+                    title="Next Test Case"
+                  >
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="col-md-6">
-            <p><strong>Description:</strong></p>
-            <div class="border rounded p-3 bg-light">
-              {{ testRun.description || 'No description available' }}
+          <div class="card-body">
+            <!-- Test Case Details -->
+            <div class="mb-4">
+              <h5>{{ currentTestCase.TestCase?.Title || currentTestCase.title }}</h5>
+              <p class="text-muted">{{ currentTestCase.TestCase?.Description || currentTestCase.description }}</p>
+              
+              <!-- Test Steps -->
+              <div v-if="currentTestSteps && currentTestSteps.length > 0" class="mt-3">
+                <h6><i class="fas fa-list-ol"></i> Test Steps:</h6>
+                <div class="test-steps">
+                  <div 
+                    v-for="step in currentTestSteps" 
+                    :key="step.id"
+                    class="step-item mb-3 p-3 border rounded"
+                  >
+                    <div class="fw-bold text-primary">Step {{ step.step_number }}</div>
+                    <div class="step-description mb-2">{{ step.description }}</div>
+                    <div class="step-expected">
+                      <small class="text-muted fw-bold">Expected Result:</small>
+                      <small class="d-block">{{ step.expected_result }}</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Result Selection -->
+            <div class="row">
+              <div class="col-md-8">
+                <!-- Elapsed Time Display -->
+                <div v-if="elapsedTime" class="mb-3">
+                  <small class="text-muted">
+                    <i class="fas fa-clock"></i> Elapsed Time: {{ elapsedTime }}
+                  </small>
+                </div>
+                
+                <!-- Result Selection -->
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Test Result *</label>
+                  <div class="btn-group d-flex" role="group">
+                    <input type="radio" class="btn-check" :id="`pass-${currentTestCase.id}`" :value="'Pass'" v-model="currentResult.status">
+                    <label class="btn btn-outline-success" :for="`pass-${currentTestCase.id}`">
+                      <i class="fas fa-check"></i> Pass
+                    </label>
+                    
+                    <input type="radio" class="btn-check" :id="`fail-${currentTestCase.id}`" :value="'Fail'" v-model="currentResult.status">
+                    <label class="btn btn-outline-danger" :for="`fail-${currentTestCase.id}`">
+                      <i class="fas fa-times"></i> Fail
+                    </label>
+                    
+                    <input type="radio" class="btn-check" :id="`skip-${currentTestCase.id}`" :value="'Skip'" v-model="currentResult.status">
+                    <label class="btn btn-outline-warning" :for="`skip-${currentTestCase.id}`">
+                      <i class="fas fa-forward"></i> Skip
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <!-- Save Button -->
+                <div class="d-grid">
+                  <button 
+                    @click="saveTestResult" 
+                    class="btn btn-primary btn-lg"
+                    :disabled="!currentResult.status || saving"
+                  >
+                    <i class="fas fa-save"></i> 
+                    {{ saving ? 'Saving...' : 'Save Result' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Comments -->
+            <div class="mb-3">
+              <label class="form-label">Comments</label>
+              <textarea 
+                class="form-control" 
+                rows="3" 
+                placeholder="Add comments about test execution..."
+                v-model="currentResult.notes"
+              ></textarea>
             </div>
           </div>
         </div>
+        
+        <!-- Not Started State -->
+        <div class="card" v-else-if="testRun?.status === 'Not Started'">
+          <div class="card-body text-center py-5">
+            <i class="fas fa-play-circle fa-4x text-muted mb-3"></i>
+            <h5>Test Run Not Started</h5>
+            <p class="text-muted">Click "Start" to begin test execution</p>
+          </div>
+        </div>
+        
+        <!-- Completed State -->
+        <div class="card" v-else-if="testRun?.status === 'Completed'">
+          <div class="card-body text-center py-5">
+            <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+            <h5>Test Run Completed</h5>
+            <p class="text-muted">All tests have been executed</p>
+          </div>
+        </div>
       </div>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-      <p class="mt-2">Loading test run details...</p>
     </div>
   </div>
 </template>
 
 <script>
 import { api } from '../services/api.js'
-import { formatDate, showAlert, showLoading, truncateText, getStatusBadgeClass, getPriorityBadgeClass } from '../utils/helpers.js'
+import { formatDate, showAlert, showLoading, truncateText, getStatusBadgeClass, getPriorityBadgeClass, getTestCaseStatusBadgeClass, calculateDuration } from '../utils/helpers.js'
 
 export default {
   name: 'TestRunDetail',
   props: {
     id: {
-      type: String,
+      type: [String, Number],
       required: true
     }
   },
@@ -391,22 +291,20 @@ export default {
     return {
       testRun: null,
       testCases: [],
+      currentTestSteps: [], // Store current test case steps
+      loading: false,
+      saving: false,
       currentTestCaseIndex: 0,
       currentResult: {
         status: '',
         notes: ''
       },
-      loading: true,
-      saving: false,
-      elapsedTimer: null,
-      elapsedTime: ''
+      elapsedTime: null,
+      elapsedTimer: null
     }
   },
-  mounted() {
-    this.loadData()
-  },
-  watch: {
-    id() {
+  async mounted() {
+    if (this.id) {
       this.loadData()
     }
   },
@@ -421,6 +319,8 @@ export default {
     truncateText,
     getStatusBadgeClass,
     getPriorityBadgeClass,
+    getTestCaseStatusBadgeClass,
+    calculateDuration,
     
     async loadData() {
       this.loading = true
@@ -439,6 +339,7 @@ export default {
         // Initialize current result if in progress
         if (this.testRun?.status === 'In Progress' && this.currentTestCase) {
           this.loadCurrentTestResult()
+          this.loadCurrentTestSteps()
         }
         
         // Start elapsed time timer if in progress
@@ -450,6 +351,18 @@ export default {
         showAlert('Error loading test run data: ' + error.message, 'danger')
       } finally {
         this.loading = false
+      }
+    },
+    
+    async loadCurrentTestSteps() {
+      if (!this.currentTestCase?.TestCase?.ID) return
+      
+      try {
+        const steps = await api.getTestCaseSteps(this.currentTestCase.TestCase.ID)
+        this.currentTestSteps = steps
+      } catch (error) {
+        console.error('Error loading test steps:', error)
+        this.currentTestSteps = []
       }
     },
     
@@ -522,42 +435,48 @@ export default {
         this.loading = false
       }
     },
-    
-    // Test Case Navigation
-    previousTestCase() {
-      if (this.currentTestCaseIndex > 0) {
-        this.currentTestCaseIndex--
+
+    // Navigation Methods
+    selectTestCase(index) {
+      if (index >= 0 && index < this.testCases.length) {
+        this.currentTestCaseIndex = index
         this.loadCurrentTestResult()
+        this.loadCurrentTestSteps()
       }
     },
     
     nextTestCase() {
-      if (this.currentTestCaseIndex < (this.testCases?.length || 0) - 1) {
-        this.currentTestCaseIndex++
-        this.loadCurrentTestResult()
+      if (this.currentTestCaseIndex < this.testCases.length - 1) {
+        this.selectTestCase(this.currentTestCaseIndex + 1)
       }
     },
     
-    goToTestCase(index) {
-      this.currentTestCaseIndex = index
-      this.loadCurrentTestResult()
+    previousTestCase() {
+      if (this.currentTestCaseIndex > 0) {
+        this.selectTestCase(this.currentTestCaseIndex - 1)
+      }
     },
-    
+
     // Test Result Management
     async saveTestResult() {
-      if (!this.currentTestCase || !this.currentResult.status) return
+      if (!this.currentResult.status) {
+        showAlert('Please select a test result status', 'warning')
+        return
+      }
       
       try {
         this.saving = true
-        const updateData = {
+        
+        const request = {
           status: this.currentResult.status,
-          notes: this.currentResult.notes,
-          executed_by: 'Current User' // TODO: Get from auth context
+          result_notes: this.currentResult.notes || null,
+          executed_by: 'Current User', // TODO: Get from auth
+          completed_at: new Date().toISOString()
         }
         
-        await api.updateTestRunCase(this.id, this.currentTestCase.id, updateData)
+        await api.updateTestRunCase(this.testRun.id, this.currentTestCase.TestCase.ID, request)
         
-        // Update local test case data
+        // Update local data
         this.currentTestCase.Status = this.currentResult.status
         this.currentTestCase.ResultNotes = this.currentResult.notes
         this.currentTestCase.UpdatedAt = new Date().toISOString()
@@ -565,7 +484,7 @@ export default {
         showAlert('Test result saved successfully!', 'success')
         
         // Auto-advance to next test case if not the last one
-        if (this.currentTestCaseIndex < (this.testCases?.length || 0) - 1) {
+        if (this.currentTestCaseIndex < this.testCases.length - 1) {
           setTimeout(() => {
             this.nextTestCase()
           }, 1000)
@@ -577,105 +496,28 @@ export default {
         this.saving = false
       }
     },
-    
-    // Progress and Status Methods
-    getProgressPercentage() {
-      if (!this.testCases || this.testCases.length === 0) return 0
-      
-      const executed = this.testCases.filter(tc => tc.result_status && tc.result_status !== 'Not Executed').length
-      return Math.round((executed / this.testCases.length) * 100)
-    },
-    
-    getProgressText() {
-      if (!this.testCases || this.testCases.length === 0) return '0/0'
-      
-      const executed = this.testCases.filter(tc => tc.result_status && tc.result_status !== 'Not Executed').length
-      return `${executed}/${this.testCases.length}`
-    },
-    
-    getProgressBarClass() {
-      if (!this.testCases || this.testCases.length === 0) return 'bg-secondary'
-      
-      const passed = this.testCases.filter(tc => tc.result_status === 'Pass').length
-      const failed = this.testCases.filter(tc => tc.result_status === 'Fail').length
-      const total = this.testCases.length
-      
-      if (failed > 0) return 'bg-danger'
-      if (passed === total) return 'bg-success'
-      return 'bg-warning'
-    },
-    
-    getTestCaseStatusBadgeClass(status) {
-      const classes = {
-        'Pass': 'badge bg-success',
-        'Fail': 'badge bg-danger', 
-        'Skip': 'badge bg-warning',
-        'Not Executed': 'badge bg-secondary'
-      }
-      return classes[status] || 'badge bg-secondary'
-    },
-    
+
     // Timer Methods
     startElapsedTimer() {
-      if (!this.testRun?.started_at) return
-      
       this.elapsedTimer = setInterval(() => {
-        this.updateElapsedTime()
+        if (this.testRun?.started_at) {
+          const start = new Date(this.testRun.started_at)
+          const now = new Date()
+          const diff = now - start
+          
+          const hours = Math.floor(diff / (1000 * 60 * 60))
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+          
+          this.elapsedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+        }
       }, 1000)
-      
-      this.updateElapsedTime()
     },
     
     stopElapsedTimer() {
       if (this.elapsedTimer) {
         clearInterval(this.elapsedTimer)
         this.elapsedTimer = null
-      }
-    },
-    
-    updateElapsedTime() {
-      if (!this.testRun?.started_at) return
-      
-      const start = new Date(this.testRun.started_at)
-      const now = new Date()
-      const elapsed = now - start
-      
-      const hours = Math.floor(elapsed / 3600000)
-      const minutes = Math.floor((elapsed % 3600000) / 60000)
-      const seconds = Math.floor((elapsed % 60000) / 1000)
-      
-      if (hours > 0) {
-        this.elapsedTime = `${hours}h ${minutes}m ${seconds}s`
-      } else if (minutes > 0) {
-        this.elapsedTime = `${minutes}m ${seconds}s`
-      } else {
-        this.elapsedTime = `${seconds}s`
-      }
-    },
-    
-    getElapsedTime() {
-      return this.elapsedTime || '0s'
-    },
-    
-    calculateDuration(startedAt, completedAt) {
-      if (!startedAt || !completedAt) return 'N/A'
-      
-      const start = new Date(startedAt)
-      const end = new Date(completedAt)
-      const durationMs = end - start
-      
-      if (durationMs < 0) return 'N/A'
-      
-      const hours = Math.floor(durationMs / 3600000)
-      const minutes = Math.floor((durationMs % 3600000) / 60000)
-      const seconds = Math.floor((durationMs % 60000) / 1000)
-      
-      if (hours > 0) {
-        return `${hours}h ${minutes}m ${seconds}s`
-      } else if (minutes > 0) {
-        return `${minutes}m ${seconds}s`
-      } else {
-        return `${seconds}s`
       }
     }
   },
@@ -687,106 +529,26 @@ export default {
 </script>
 
 <style scoped>
-.status-badge {
-  font-size: 0.85rem;
-  padding: 0.4em 0.8em;
+.test-steps {
+  max-height: 400px;
+  overflow-y: auto;
 }
 
-.priority-badge {
-  font-size: 0.75rem;
-  padding: 0.3em 0.6em;
-}
-
-.test-step-item {
+.step-item {
   background-color: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
-  padding: 10px;
 }
 
-.step-number {
-  background-color: var(--bs-primary);
-  color: white;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8em;
-  font-weight: bold;
-  flex-shrink: 0;
+.step-item:hover {
+  background-color: #e9ecef;
 }
 
-.table-active {
-  background-color: rgba(13, 110, 253, 0.1) !important;
-  border-left: 3px solid var(--bs-primary);
+.list-group-item.active {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
 }
 
-.btn-group-sm .btn {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-}
-
-.progress {
-  border-radius: 10px;
-}
-
-.card {
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  border: 1px solid rgba(0, 0, 0, 0.125);
-  margin-bottom: 1rem;
-}
-
-.card-header {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
-}
-
-.card-header h5 {
-  margin-bottom: 0;
-  font-weight: 600;
-}
-
-.btn-check:checked + .btn-outline-success {
-  background-color: var(--bs-success);
-  border-color: var(--bs-success);
-  color: white;
-}
-
-.btn-check:checked + .btn-outline-danger {
-  background-color: var(--bs-danger);
-  border-color: var(--bs-danger);
-  color: white;
-}
-
-.btn-check:checked + .btn-outline-warning {
-  background-color: var(--bs-warning);
-  border-color: var(--bs-warning);
-  color: white;
-}
-
-.text-muted {
-  font-size: 0.9em;
-}
-
-.badge {
-  font-size: 0.75rem;
-}
-
-@media (max-width: 768px) {
-  .btn-toolbar {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .btn-group {
-    width: 100%;
-  }
-  
-  .d-flex.gap-2 {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
+.test-case-list {
+  max-height: 600px;
+  overflow-y: auto;
 }
 </style>

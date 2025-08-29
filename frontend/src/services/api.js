@@ -56,6 +56,7 @@ export const api = {
 
   // Test Steps
   getTestSteps: (testCaseId) => apiClient.get(`/test-cases/${testCaseId}/steps`),
+  getTestCaseSteps: (testCaseId) => apiClient.get(`/test-cases/${testCaseId}/steps`), // Alias for getTestSteps
   createTestStep: (testCaseId, data) => apiClient.post(`/test-cases/${testCaseId}/steps`, data),
   updateTestStep: (id, data) => apiClient.put(`/test-steps/${id}`, data),
   deleteTestStep: (id) => apiClient.delete(`/test-steps/${id}`),
