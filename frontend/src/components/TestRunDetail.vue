@@ -61,7 +61,16 @@
             <i class="fas fa-pause"></i> Pause
           </button>
           <button 
-            v-if="testRun.status === 'In Progress'"
+            v-else-if="testRun.status === 'Paused'"
+            @click="startTestRun"
+            class="btn btn-success"
+            :disabled="loading"
+            title="Resume Test Run"
+          >
+            <i class="fas fa-play"></i> Resume
+          </button>
+          <button 
+            v-if="testRun.status === 'In Progress' || testRun.status === 'Paused'"
             @click="finishTestRun"
             class="btn btn-primary"
             :disabled="loading"
@@ -114,7 +123,7 @@
                 @click="selectTestCase(index)"
                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                 :class="{ 
-                  'active': testRun.status === 'In Progress' && index === currentTestCaseIndex,
+                  'active': (testRun.status === 'In Progress' || testRun.status === 'Paused') && index === currentTestCaseIndex,
                   'list-group-item-success': testCase.Status === 'Pass',
                   'list-group-item-danger': testCase.Status === 'Fail',
                   'list-group-item-warning': testCase.Status === 'Skip'
@@ -140,7 +149,7 @@
 
       <!-- Right Main Panel: Test Running -->
       <div class="col-md-9">
-        <div class="card" v-if="testRun?.status === 'In Progress' && currentTestCase">
+        <div class="card" v-if="(testRun?.status === 'In Progress' || testRun?.status === 'Paused') && currentTestCase">
           <div class="card-header bg-primary text-white">
             <div class="row align-items-center">
               <div class="col">

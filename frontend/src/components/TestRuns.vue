@@ -355,6 +355,7 @@ export default {
       const classes = {
         'Not Started': 'badge bg-secondary',
         'In Progress': 'badge bg-warning',
+        'Paused': 'badge bg-warning',
         'Completed': 'badge bg-success',
         'Cancelled': 'badge bg-danger'
       }

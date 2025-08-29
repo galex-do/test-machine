@@ -190,8 +190,8 @@ func (s *TestRunService) PauseTestRun(id int) (*models.TestRun, error) {
                 return nil, err
         }
 
-        // Update test run status to "Not Started" (paused state)
-        status := "Not Started"
+        // Update test run status to "Paused"
+        status := "Paused"
         req := models.UpdateTestRunRequest{
                 Status: &status,
         }

@@ -31,7 +31,9 @@ export const getStatusBadgeClass = (status) => {
     'Active': 'active',
     'Inactive': 'inactive',
     'In Progress': 'in-progress',
-    'Completed': 'completed'
+    'Paused': 'paused',
+    'Completed': 'completed',
+    'Not Started': 'not-started'
   }
   return statusMap[status] || 'secondary'
 }
