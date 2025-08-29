@@ -173,8 +173,8 @@
       <div class="card-body" v-if="currentTestCase">
         <div class="row">
           <div class="col-md-8">
-            <h5>{{ currentTestCase.title }}</h5>
-            <p class="text-muted">{{ currentTestCase.description }}</p>
+            <h5>{{ currentTestCase.TestCase?.Title || currentTestCase.title }}</h5>
+            <p class="text-muted">{{ currentTestCase.TestCase?.Description || currentTestCase.description }}</p>
             
             <!-- Test Steps -->
             <div v-if="currentTestCase.test_steps && currentTestCase.test_steps.length > 0" class="mb-3">
@@ -281,18 +281,18 @@
                 <td>{{ index + 1 }}</td>
                 <td>
                   <div>
-                    <strong>{{ testCase.title }}</strong>
-                    <div v-if="testCase.description" class="text-muted small">{{ truncateText(testCase.description, 80) }}</div>
+                    <strong>{{ testCase.TestCase?.Title || testCase.title }}</strong>
+                    <div v-if="testCase.TestCase?.Description || testCase.description" class="text-muted small">{{ truncateText(testCase.TestCase?.Description || testCase.description, 80) }}</div>
                   </div>
                 </td>
                 <td>
-                  <span class="priority-badge" :class="getPriorityBadgeClass(testCase.priority)">
-                    {{ testCase.priority }}
+                  <span class="priority-badge" :class="getPriorityBadgeClass(testCase.TestCase?.Priority || testCase.priority)">
+                    {{ testCase.TestCase?.Priority || testCase.priority }}
                   </span>
                 </td>
                 <td>
-                  <span class="status-badge" :class="getTestCaseStatusBadgeClass(testCase.result_status || 'Not Executed')">
-                    {{ testCase.result_status || 'Not Executed' }}
+                  <span class="status-badge" :class="getTestCaseStatusBadgeClass(testCase.Status || 'Not Executed')">
+                    {{ testCase.Status || 'Not Executed' }}
                   </span>
                 </td>
                 <td class="small text-muted">
@@ -432,8 +432,8 @@ export default {
         this.testRun = testRunData
         
         // Load test cases associated with this test run
-        if (testRunData?.test_cases) {
-          this.testCases = testRunData.test_cases
+        if (testRunData?.TestCases) {
+          this.testCases = testRunData.TestCases
         }
         
         // Initialize current result if in progress
@@ -457,8 +457,8 @@ export default {
       if (!this.currentTestCase) return
       
       this.currentResult = {
-        status: this.currentTestCase.result_status || '',
-        notes: this.currentTestCase.result_notes || ''
+        status: this.currentTestCase.Status || '',
+        notes: this.currentTestCase.ResultNotes || ''
       }
     },
 
@@ -558,9 +558,9 @@ export default {
         await api.updateTestRunCase(this.id, this.currentTestCase.id, updateData)
         
         // Update local test case data
-        this.currentTestCase.result_status = this.currentResult.status
-        this.currentTestCase.result_notes = this.currentResult.notes
-        this.currentTestCase.result_updated_at = new Date().toISOString()
+        this.currentTestCase.Status = this.currentResult.status
+        this.currentTestCase.ResultNotes = this.currentResult.notes
+        this.currentTestCase.UpdatedAt = new Date().toISOString()
         
         showAlert('Test result saved successfully!', 'success')
         
