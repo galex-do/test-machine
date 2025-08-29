@@ -175,19 +175,23 @@ func (s *TestRunService) PauseTestRun(id int) (*models.TestRun, error) {
                 return nil, fmt.Errorf("test run not found")
         }
 
-        // Check if test run has active interval
+        // Check if test run status is "In Progress" - this is the real check we need
+        if testRun.Status != "In Progress" {
+                return nil, fmt.Errorf("test run is not currently running")
+        }
+        
+        // Check if test run has active interval (optional - close it if exists)
         hasActive, err := s.intervalRepo.HasActiveInterval(id)
         if err != nil {
                 return nil, err
         }
-        if !hasActive {
-                return nil, fmt.Errorf("test run is not currently running")
-        }
 
-        // Close the active interval
-        err = s.intervalRepo.CloseActiveInterval(id)
-        if err != nil {
-                return nil, err
+        // Close the active interval if one exists
+        if hasActive {
+                err = s.intervalRepo.CloseActiveInterval(id)
+                if err != nil {
+                        return nil, err
+                }
         }
 
         // Update test run status to "Paused"
