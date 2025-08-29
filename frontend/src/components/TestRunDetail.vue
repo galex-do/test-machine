@@ -432,8 +432,8 @@ export default {
         this.testRun = testRunData
         
         // Load test cases associated with this test run
-        if (testRunData?.TestCases) {
-          this.testCases = testRunData.TestCases
+        if (testRunData?.test_cases) {
+          this.testCases = testRunData.test_cases
         }
         
         // Initialize current result if in progress
