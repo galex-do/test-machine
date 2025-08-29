@@ -124,9 +124,9 @@
                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                 :class="{ 
                   'active': (testRun.status === 'In Progress' || testRun.status === 'Paused') && index === currentTestCaseIndex,
-                  'list-group-item-success': testCase.Status === 'Pass',
-                  'list-group-item-danger': testCase.Status === 'Fail',
-                  'list-group-item-warning': testCase.Status === 'Skip'
+                  'list-group-item-success': testCase.status === 'Pass',
+                  'list-group-item-danger': testCase.status === 'Fail',
+                  'list-group-item-warning': testCase.status === 'Skip'
                 }"
               >
                 <div>
@@ -134,12 +134,12 @@
                   <small class="text-muted">{{ truncateText(testCase.test_case?.title || testCase.title, 25) }}</small>
                 </div>
                 <span class="badge" :class="{
-                  'bg-success': testCase.Status === 'Pass',
-                  'bg-danger': testCase.Status === 'Fail', 
-                  'bg-warning text-dark': testCase.Status === 'Skip',
-                  'bg-secondary': testCase.Status === 'Not Executed' || !testCase.Status
+                  'bg-success': testCase.status === 'Pass',
+                  'bg-danger': testCase.status === 'Fail', 
+                  'bg-warning text-dark': testCase.status === 'Skip',
+                  'bg-secondary': testCase.status === 'Not Executed' || !testCase.status
                 }">
-                  {{ testCase.Status || 'Not Executed' }}
+                  {{ testCase.status || 'Not Executed' }}
                 </span>
               </button>
             </div>
@@ -377,8 +377,8 @@ export default {
       if (!this.currentTestCase) return
       
       this.currentResult = {
-        status: this.currentTestCase.Status || '',
-        notes: this.currentTestCase.ResultNotes || ''
+        status: this.currentTestCase.status || '',
+        notes: this.currentTestCase.result_notes || ''
       }
     },
 
@@ -486,9 +486,12 @@ export default {
         await api.updateTestRunCase(this.testRun.id, testCaseId, request)
         
         // Update local data
-        this.currentTestCase.Status = this.currentResult.status
-        this.currentTestCase.ResultNotes = this.currentResult.notes
-        this.currentTestCase.UpdatedAt = new Date().toISOString()
+        this.currentTestCase.status = this.currentResult.status
+        this.currentTestCase.result_notes = this.currentResult.notes
+        this.currentTestCase.updated_at = new Date().toISOString()
+        
+        // Reload test run data to get updated results from database
+        await this.loadData()
         
         showAlert('Test result saved successfully!', 'success')
         
