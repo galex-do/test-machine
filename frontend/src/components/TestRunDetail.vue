@@ -149,13 +149,14 @@
 
       <!-- Right Main Panel: Test Running -->
       <div class="col-md-9">
-        <div class="card" v-if="(testRun?.status === 'In Progress' || testRun?.status === 'Paused') && currentTestCase">
+        <div class="card" v-if="currentTestCase && (testRun?.status === 'In Progress' || testRun?.status === 'Paused' || testRun?.status === 'Completed')">
           <div class="card-header bg-primary text-white">
             <div class="row align-items-center">
               <div class="col">
                 <h5 class="mb-0">
-                  <i class="fas fa-play-circle"></i>
-                  Test Running - Case {{ currentTestCaseIndex + 1 }} of {{ testCases?.length || 0 }}
+                  <i :class="isEditable ? 'fas fa-play-circle' : 'fas fa-eye'"></i>
+                  {{ isEditable ? 'Test Running' : 'Test Results' }} - Case {{ currentTestCaseIndex + 1 }} of {{ testCases?.length || 0 }}
+                  <span v-if="!isEditable" class="badge bg-secondary ms-2">Read Only</span>
                 </h5>
               </div>
               <div class="col-auto">
@@ -211,20 +212,20 @@
             
             <!-- Result Selection -->
             <div class="mb-4">
-              <label class="form-label fw-bold">Test Result *</label>
+              <label class="form-label fw-bold">Test Result {{ isEditable ? '*' : '' }}</label>
               <div class="btn-group d-flex" role="group">
-                <input type="radio" class="btn-check" :id="`pass-${currentTestCase?.id || 'default'}`" :value="'Pass'" v-model="currentResult.status">
-                <label class="btn btn-outline-success" :for="`pass-${currentTestCase?.id || 'default'}`">
+                <input type="radio" class="btn-check" :id="`pass-${currentTestCase?.id || 'default'}`" :value="'Pass'" v-model="currentResult.status" :disabled="!isEditable">
+                <label class="btn btn-outline-success" :for="`pass-${currentTestCase?.id || 'default'}`" :class="{ 'disabled': !isEditable }">
                   <i class="fas fa-check"></i> Pass
                 </label>
                 
-                <input type="radio" class="btn-check" :id="`fail-${currentTestCase?.id || 'default'}`" :value="'Fail'" v-model="currentResult.status">
-                <label class="btn btn-outline-danger" :for="`fail-${currentTestCase?.id || 'default'}`">
+                <input type="radio" class="btn-check" :id="`fail-${currentTestCase?.id || 'default'}`" :value="'Fail'" v-model="currentResult.status" :disabled="!isEditable">
+                <label class="btn btn-outline-danger" :for="`fail-${currentTestCase?.id || 'default'}`" :class="{ 'disabled': !isEditable }">
                   <i class="fas fa-times"></i> Fail
                 </label>
                 
-                <input type="radio" class="btn-check" :id="`skip-${currentTestCase?.id || 'default'}`" :value="'Skip'" v-model="currentResult.status">
-                <label class="btn btn-outline-warning" :for="`skip-${currentTestCase?.id || 'default'}`">
+                <input type="radio" class="btn-check" :id="`skip-${currentTestCase?.id || 'default'}`" :value="'Skip'" v-model="currentResult.status" :disabled="!isEditable">
+                <label class="btn btn-outline-warning" :for="`skip-${currentTestCase?.id || 'default'}`" :class="{ 'disabled': !isEditable }">
                   <i class="fas fa-forward"></i> Skip
                 </label>
               </div>
@@ -236,13 +237,14 @@
               <textarea 
                 class="form-control" 
                 rows="3" 
-                placeholder="Add comments about test execution..."
+                :placeholder="isEditable ? 'Add comments about test execution...' : 'No comments provided'"
                 v-model="currentResult.notes"
+                :readonly="!isEditable"
               ></textarea>
             </div>
             
             <!-- Save Button at Bottom -->
-            <div class="d-grid">
+            <div class="d-grid" v-if="isEditable">
               <button 
                 @click="saveTestResult" 
                 class="btn btn-primary btn-lg"
@@ -250,6 +252,15 @@
               >
                 <i class="fas fa-save"></i> 
                 {{ saving ? 'Saving...' : 'Save Result' }}
+              </button>
+            </div>
+            <div class="d-grid" v-else>
+              <button 
+                class="btn btn-secondary btn-lg"
+                disabled
+              >
+                <i class="fas fa-lock"></i> 
+                Read Only Mode
               </button>
             </div>
           </div>
@@ -313,6 +324,9 @@ export default {
   computed: {
     currentTestCase() {
       return this.testCases && this.testCases[this.currentTestCaseIndex] || null
+    },
+    isEditable() {
+      return this.testRun?.status === 'In Progress'
     }
   },
   methods: {
@@ -337,8 +351,8 @@ export default {
           this.testCases = testRunData.test_cases
         }
         
-        // Initialize current result if in progress
-        if (this.testRun?.status === 'In Progress' && this.currentTestCase) {
+        // Initialize current result and test steps if we have a current test case
+        if (this.currentTestCase) {
           this.loadCurrentTestResult()
           this.loadCurrentTestSteps()
         }
