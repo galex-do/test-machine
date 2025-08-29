@@ -142,7 +142,7 @@
             <tbody>
               <tr v-for="run in recentTestRuns" :key="run.id">
                 <td>
-                  <router-link :to="`/test-run/${run.id}`" class="text-decoration-none">
+                  <router-link :to="`/test-runs/${run.id}`" class="text-decoration-none">
                     <strong>{{ run.name }}</strong>
                   </router-link>
                 </td>

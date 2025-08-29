@@ -27,7 +27,7 @@ const routes = [
   { path: '/test-runs', name: 'TestRuns', component: TestRuns },
   { path: '/test-runs/new', name: 'TestRunForm', component: TestRunForm },
   { path: '/test-runs/:id/edit', name: 'TestRunEdit', component: TestRunForm, props: true },
-  { path: '/test-run/:id', name: 'TestRunDetail', component: TestRunDetail, props: true },
+  { path: '/test-runs/:id', name: 'TestRunDetail', component: TestRunDetail, props: true },
   { path: '/reports', name: 'Reports', component: Reports },
   { path: '/repositories', name: 'Repositories', component: Repositories },
   { path: '/repository/:id', name: 'RepositoryDetail', component: RepositoryDetail, props: true },

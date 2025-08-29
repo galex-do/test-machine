@@ -87,7 +87,7 @@
                 <tr v-for="testRun in filteredTestRuns" :key="testRun.id">
                   <td>
                     <router-link 
-                      :to="`/test-run/${testRun.id}`" 
+                      :to="`/test-runs/${testRun.id}`" 
                       class="text-decoration-none fw-bold text-primary"
                     >
                       {{ testRun.name }}
