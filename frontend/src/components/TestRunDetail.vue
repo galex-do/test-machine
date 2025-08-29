@@ -469,7 +469,8 @@ export default {
           status: this.currentResult.status,
           result_notes: this.currentResult.notes || null,
           executed_by: 'Current User', // TODO: Get from auth
-          completed_at: new Date().toISOString()
+          completed_at: new Date().toISOString(),
+          started_at: this.currentResult.started_at || new Date().toISOString()
         }
         
         const testCaseId = this.currentTestCase.test_case?.id || this.currentTestCase.test_case_id

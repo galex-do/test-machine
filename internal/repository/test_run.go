@@ -486,15 +486,15 @@ func (r *TestRunRepository) UpdateTestRunCase(testRunID, testCaseID int, req mod
         args = append(args, time.Now())
         argIndex++
 
-        args = append(args, testRunID, testCaseID)
-
-        // Build the SET clause properly
+        // Build the SET clause properly  
         setClause := strings.Join(setParts, ", ")
         query := fmt.Sprintf(`
                 UPDATE test_run_cases 
                 SET %s
                 WHERE test_run_id = $%d AND test_case_id = $%d
-        `, setClause, argIndex-1, argIndex)
+        `, setClause, argIndex, argIndex+1)
+        
+        args = append(args, testRunID, testCaseID)
 
         _, err := r.db.Exec(query, args...)
         if err != nil {
