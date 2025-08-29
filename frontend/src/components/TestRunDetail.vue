@@ -277,7 +277,7 @@
 
 <script>
 import { api } from '../services/api.js'
-import { formatDate, showAlert, showLoading, truncateText, getStatusBadgeClass, getPriorityBadgeClass, getTestCaseStatusBadgeClass, calculateDuration } from '../utils/helpers.js'
+import { formatDate, showAlert, showLoading, truncateText, getStatusBadgeClass, getPriorityBadgeClass, calculateDuration } from '../utils/helpers.js'
 
 export default {
   name: 'TestRunDetail',
@@ -319,7 +319,6 @@ export default {
     truncateText,
     getStatusBadgeClass,
     getPriorityBadgeClass,
-    getTestCaseStatusBadgeClass,
     calculateDuration,
     
     async loadData() {

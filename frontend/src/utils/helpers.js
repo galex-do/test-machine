@@ -103,3 +103,25 @@ export const calculateStats = (items, statusField = 'status') => {
 
   return stats
 }
+
+export const calculateDuration = (startDate, endDate) => {
+  if (!startDate || !endDate) return 'N/A'
+  
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+  const diff = end - start
+  
+  if (diff < 0) return 'N/A'
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`
+  } else if (minutes > 0) {
+    return `${minutes}m ${seconds}s`
+  } else {
+    return `${seconds}s`
+  }
+}
